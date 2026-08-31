@@ -3,16 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm, type Resolver, type SubmitHandler } from "react-hook-form";
-import { login as onLogin, register as onRegister } from "../api/auth";
+import { login as onLogin, register as onRegister } from "../../api/auth";
+import { getCredentialsSchema, type Credentials, type Mode } from "@repo/types";
 import {
-  getCredentialsSchema,
-  type Credentials,
-  type Mode,
-} from "../types/credentials";
-import { CredentialsButton } from "@repo/ui";
-import CredentialsField from "./CredentialsField";
-import NotImplementedAlert from "./NotImplementedAlert";
-import ToastError from "./ToastError";
+  CredentialsButton,
+  NotImplementedAlert,
+  ToastError,
+  CredentialsField,
+} from "@repo/ui";
 
 export default function CredentialsPage() {
   const [mode, setMode] = useState<Mode>("signin");

@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import NotImplementedAlert from './NotImplementedAlert';
+import { useState } from "react";
+import { NotImplementedAlert } from "../ToastError/NotImplementedAlert";
 
 interface SocialButtonProps {
-  provider: 'google' | 'apple' | 'facebook';
+  provider: "google" | "apple" | "facebook";
 }
 
-export default function SocialButton({ provider }: SocialButtonProps) {
+export function SocialButton({ provider }: SocialButtonProps) {
   const [showAlert, setShowAlert] = useState(false);
 
   const labels = {
-    google: 'Continue with Google',
-    apple: 'Continue with Apple',
-    facebook: 'Continue with Facebook',
+    google: "Continue with Google",
+    apple: "Continue with Apple",
+    facebook: "Continue with Facebook",
   };
   const icons = {
     google: (

@@ -1,5 +1,5 @@
-import type { UseFormRegister } from 'react-hook-form';
-import type { Credentials } from '../types/credentials';
+import type { UseFormRegister } from "react-hook-form";
+import type { Credentials } from "@repo/types";
 
 interface CredentialsFieldProps {
   label: string;
@@ -9,14 +9,14 @@ interface CredentialsFieldProps {
   register: UseFormRegister<Credentials>;
 }
 
-export default function CredentialsField({
+export function CredentialsField({
   label,
   field,
   placeholder,
   type,
   register,
 }: CredentialsFieldProps) {
-  const id = label.trim().replaceAll(' ', '').toLowerCase();
+  const id = label.trim().replaceAll(" ", "").toLowerCase();
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium mb-1.5">

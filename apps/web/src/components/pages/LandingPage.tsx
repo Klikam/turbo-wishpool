@@ -1,6 +1,6 @@
-import { EyeOff, Gift, Star, Users } from 'lucide-react';
+import { EyeOff, Gift, Star, Users } from "lucide-react";
 
-import AuthPage from '@/features/auth/components/AuthPage';
+import AuthPage from "./AuthPage";
 
 export default function LandingPage() {
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Mode } from "../types/credentials";
+import type { Mode } from "@repo/types";
 
 interface CredentialsButtonProps {
   label: string;

@@ -1,5 +1,5 @@
-import { authClient } from '../lib/auth-client';
-import type { Credentials } from '../types/credentials';
+import { authClient } from "../lib/auth-client";
+import type { Credentials } from "@repo/types";
 
 export const register = async (credentials: Credentials) =>
   authClient.signUp.email({
@@ -8,7 +8,7 @@ export const register = async (credentials: Credentials) =>
     password: credentials.password,
   });
 
-export const login = async (credentials: Omit<Credentials, 'name'>) =>
+export const login = async (credentials: Omit<Credentials, "name">) =>
   authClient.signIn.email({
     email: credentials.email,
     password: credentials.password,

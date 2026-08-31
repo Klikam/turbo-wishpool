@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from "zod";
 
 const passMin = 8;
 const passMax = 20;
@@ -24,22 +24,22 @@ const passwordSchema = z
 const nameMin = 3;
 const nameMinLengthErrorMessage = `Name must contain at least ${nameMin.toString()} characters`;
 
-export const RegisterSchema = z.object({
+const RegisterSchema = z.object({
   name: z.string().min(nameMin, nameMinLengthErrorMessage),
   email: z.email(),
   password: passwordSchema,
 });
 
-export const SignInSchema = z.object({
+const SignInSchema = z.object({
   email: z.email(),
   password: passwordSchema,
 });
 
 export type Credentials = z.infer<typeof RegisterSchema>;
 
-export type Mode = 'signin' | 'register';
+export type Mode = "signin" | "register";
 
 export const getCredentialsSchema = (
   mode: Mode,
 ): typeof RegisterSchema | typeof SignInSchema =>
-  mode === 'register' ? RegisterSchema : SignInSchema;
+  mode === "register" ? RegisterSchema : SignInSchema;

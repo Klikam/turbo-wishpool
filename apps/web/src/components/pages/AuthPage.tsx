@@ -1,5 +1,5 @@
-import CredentialsPage from './CredentialsPage';
-import SocialButton from './SocialButton';
+import CredentialsPage from "../subpages/Credentials";
+import { SocialButton } from "@repo/ui";
 
 export default function AuthPage() {
   return (

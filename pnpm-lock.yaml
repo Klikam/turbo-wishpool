@@ -256,6 +256,9 @@ importers:
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/configs/eslint-config
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/configs/typescript-config
@@ -325,14 +328,8 @@ importers:
 
   packages/configs/typescript-config: {}
 
-  packages/ui:
+  packages/types:
     dependencies:
-      react:
-        specifier: ^19.2.0
-        version: 19.2.0
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.0(react@19.2.0)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -340,6 +337,28 @@ importers:
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../configs/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../configs/typescript-config
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.1(jiti@2.7.0)
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  packages/ui:
+    dependencies:
+      react:
+        specifier: ^19.2.0
+        version: 19.2.0
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../configs/eslint-config
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../configs/typescript-config
@@ -352,6 +371,12 @@ importers:
       '@types/react-dom':
         specifier: 19.2.2
         version: 19.2.2(@types/react@19.2.2)
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.1(jiti@2.7.0)
+      react-hook-form:
+        specifier: ^7.79.0
+        version: 7.86.0(react@19.2.0)
       typescript:
         specifier: 5.9.2
         version: 5.9.2
