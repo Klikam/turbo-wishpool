@@ -10,8 +10,14 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserContextProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+export const UserContextProvider = ({
+  children,
+  initialUser = null,
+}: {
+  children: ReactNode;
+  initialUser?: User | null;
+}) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   return (
     <UserContext value={{ currentUser, setCurrentUser }}>
       {children}
