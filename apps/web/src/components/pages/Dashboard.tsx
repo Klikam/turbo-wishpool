@@ -3,17 +3,10 @@
 import { useUserContext } from '@/context/UserContext';
 import { WishlistArraySchema, type Wishlist } from '@/types/wishlist';
 import { storageHelper } from '@/utils/storageHelper';
-import {
-  ChevronRight,
-  Gift,
-  LogOut,
-  PartyPopper,
-  Plus,
-  Trash2,
-} from 'lucide-react';
+import { DashboardHeader, EmptyState, WishlistCard } from '@repo/ui';
+import { PartyPopper, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Avatar from './Avatar';
 
 export default function Dashboard() {
   const { currentUser } = useUserContext();
@@ -49,43 +42,9 @@ export default function Dashboard() {
     console.log('Not implemented');
   }
 
-  const occasionEmoji: Record<string, string> = {
-    Birthday: '🎂',
-    Wedding: '💍',
-    'Baby shower': '🍼',
-    Anniversary: '💐',
-    Christmas: '🎄',
-    Graduation: '🎓',
-    Housewarming: '🏠',
-    Other: '🎁',
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Gift className="w-4 h-4 text-[#C4797A]" />
-            <span className="font-heading font-semibold text-foreground">
-              Wishpool
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Avatar name={currentUser.name} size="sm" />
-            <span className="text-sm text-foreground hidden sm:block">
-              {currentUser.name}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              title="Log out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader userName={currentUser.name} onLogout={handleLogout} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Greeting */}
@@ -110,72 +69,36 @@ export default function Dashboard() {
         </div>
 
         {myLists.length === 0 ? (
-          <div className="text-center py-24 border border-dashed border-border rounded-2xl">
-            <PartyPopper className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-muted-foreground text-sm mb-4">
-              No wishlists yet — create your first one!
-            </p>
-            <button
-              onClick={() => {
+          <EmptyState
+            icon={<PartyPopper />}
+            message="No wishlists yet — create your first one!"
+            action={{
+              label: 'Create wishlist',
+              onClick: () => {
                 router.push('/create');
-              }}
-              className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-[#3a1232] transition-colors"
-            >
-              Create wishlist
-            </button>
-          </div>
+              },
+            }}
+            bordered
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {myLists.map((list) => {
               const claimed = list.gifts.filter((g) => g.claimed).length;
               return (
-                <div
+                <WishlistCard
                   key={list.id}
-                  className="bg-card rounded-2xl border border-border p-5 flex flex-col gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
-                  onClick={() => {
+                  occasion={list.occasion}
+                  title={list.title}
+                  date={list.date}
+                  giftsCount={list.gifts.length}
+                  claimedCount={claimed}
+                  onOpen={() => {
                     router.push(`/wishlist/${list.id}`);
                   }}
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="text-2xl">
-                      {occasionEmoji[list.occasion] ?? '🎁'}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteList(list.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">
-                      {list.occasion}
-                    </p>
-                    <h2 className="font-heading font-semibold text-foreground leading-tight">
-                      {list.title}
-                    </h2>
-                    {list.date && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(list.date).toLocaleDateString('en-GB', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {list.gifts.length} gifts · {claimed} claimed
-                    </span>
-                    <div className="flex items-center gap-1 text-xs text-[#C4797A] font-medium">
-                      View <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                </div>
+                  onDelete={() => {
+                    deleteList(list.id);
+                  }}
+                />
               );
             })}
           </div>

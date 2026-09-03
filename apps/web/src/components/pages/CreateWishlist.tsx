@@ -3,7 +3,12 @@
 import { useUserContext } from '@/context/UserContext';
 import { WishlistArraySchema, type Wishlist } from '@/types/wishlist';
 import { storageHelper } from '@/utils/storageHelper';
-import { ChevronRight } from 'lucide-react';
+import {
+  BackButton,
+  OccasionPicker,
+  TextField,
+  TextareaField,
+} from '@repo/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -73,14 +78,13 @@ export default function CreateWishlist() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        <button
-          onClick={() => {
-            router.push('/dashboard');
-          }}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ChevronRight className="w-4 h-4 rotate-180" /> Back
-        </button>
+        <div className="mb-6">
+          <BackButton
+            onClick={() => {
+              router.push('/dashboard');
+            }}
+          />
+        </div>
 
         <h1 className="font-heading text-3xl font-semibold text-foreground mb-1">
           New wishlist
@@ -90,69 +94,40 @@ export default function CreateWishlist() {
         </p>
 
         <div className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              List title *
-            </label>
-            <input
-              className="w-full px-4 py-3 rounded-xl bg-card border border-border text-sm outline-none focus:border-[#C4797A] transition-colors"
-              placeholder="Emma's 30th Birthday"
-              value={form.title}
-              onChange={e => {
-                setForm({ ...form, title: e.target.value });
-              }}
-            />
-          </div>
+          <TextField
+            label="List title *"
+            placeholder="Emma's 30th Birthday"
+            value={form.title}
+            onChange={(title) => {
+              setForm({ ...form, title });
+            }}
+          />
 
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Occasion</label>
-            <div className="grid grid-cols-4 gap-2">
-              {occasions.map(occ => (
-                <button
-                  key={occ}
-                  onClick={() => {
-                    setForm({ ...form, occasion: occ });
-                  }}
-                  className={`px-2 py-2 rounded-lg text-xs font-medium border transition-colors text-center ${
-                    form.occasion === occ
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-muted-foreground hover:border-[#C4797A]/50'
-                  }`}
-                >
-                  {occ}
-                </button>
-              ))}
-            </div>
-          </div>
+          <OccasionPicker
+            occasions={occasions}
+            value={form.occasion}
+            onChange={(occasion) => {
+              setForm({ ...form, occasion: occasion as Ocasion });
+            }}
+          />
 
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Date of occasion
-            </label>
-            <input
-              type="date"
-              className="w-full px-4 py-3 rounded-xl bg-card border border-border text-sm outline-none focus:border-[#C4797A] transition-colors"
-              value={form.date}
-              onChange={e => {
-                setForm({ ...form, date: e.target.value });
-              }}
-            />
-          </div>
+          <TextField
+            label="Date of occasion"
+            type="date"
+            value={form.date}
+            onChange={(date) => {
+              setForm({ ...form, date });
+            }}
+          />
 
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              A note for your guests
-            </label>
-            <textarea
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl bg-card border border-border text-sm outline-none focus:border-[#C4797A] transition-colors resize-none"
-              placeholder="Thanks for celebrating with me! Anything on this list would make me so happy…"
-              value={form.description}
-              onChange={e => {
-                setForm({ ...form, description: e.target.value });
-              }}
-            />
-          </div>
+          <TextareaField
+            label="A note for your guests"
+            placeholder="Thanks for celebrating with me! Anything on this list would make me so happy…"
+            value={form.description}
+            onChange={(description) => {
+              setForm({ ...form, description });
+            }}
+          />
 
           <button
             onClick={handleCreate}

@@ -10,6 +10,7 @@
     ".": "./index.ts"
   },
   "dependencies": {
+    "lucide-react": "0.487.0",
     "react": "^19.2.0"
   },
   "devDependencies": {

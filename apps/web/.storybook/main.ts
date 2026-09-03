@@ -27,7 +27,12 @@ const config: StorybookConfig = {
     path.join(dirname, '../../../packages/ui/src/**/*.stories.@(ts|tsx)'),
   ],
 
-  addons: ['@storybook/addon-a11y', 'msw-storybook-addon'],
+  addons: [
+    '@storybook/addon-a11y',
+    'msw-storybook-addon',
+    '@storybook/addon-docs',
+    '@chromatic-com/storybook',
+  ],
 
   framework: {
     name: '@storybook/nextjs',
