@@ -1,16 +1,25 @@
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import type { Provider } from '@nestjs/common';
-import { getDbUrl } from '../config/config';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { defineRelations } from 'drizzle-orm';
+import { Pool } from 'pg';
+import * as schema from '../db/schema';
+import { ConfigService } from '@nestjs/config';
 
-export const DRIZZLE = Symbol('DRIZZLE');
+export const DrizzleAsyncProvider = 'DrizzleAsyncProvider';
 
-export type DrizzleDb = PostgresJsDatabase;
+const dbRelations = defineRelations(schema);
 
-export const drizzleProvider: Provider = {
-  provide: DRIZZLE,
-  useFactory: (): DrizzleDb => {
-    const client = postgres(getDbUrl());
-    return drizzle({ client });
+export type Database = NodePgDatabase<typeof dbRelations>;
+
+export const drizzleProvider = [
+  {
+    provide: DrizzleAsyncProvider,
+    inject: [ConfigService],
+    useFactory: async (configService: ConfigService): Promise<Database> => {
+      const connectionString = configService.get<string>('DATABASE_URL')!;
+      const pool = new Pool({
+        connectionString,
+      });
+      return drizzle({ client: pool, relations: dbRelations });
+    },
   },
-};
+];
