@@ -1,6 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { usersTable } from '../db/schema';
@@ -41,19 +40,11 @@ export class UserService {
     return result;
   }
 
-  async findAll() {
-    return `This action returns all user`;
+  async findByEmail(email: string) {
+    return this.db.select().from(usersTable).where(eq(usersTable.email, email));
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  async remove(id: number) {
-    return `This action removes a #${id} user`;
+  async findById(id: number) {
+    return this.db.select().from(usersTable).where(eq(usersTable.id, id));
   }
 }
