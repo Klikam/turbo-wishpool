@@ -1,5 +1,4 @@
 import { defineConfig } from 'drizzle-kit';
-import { getDbUrl } from './src/config/config';
 
 export default defineConfig({
   out: './drizzle',
@@ -7,6 +6,6 @@ export default defineConfig({
   dialect: 'postgresql',
   schemaFilter: ['public'],
   dbCredentials: {
-    url: getDbUrl(),
+    url: process.env.DATABASE_URL,
   },
 });
