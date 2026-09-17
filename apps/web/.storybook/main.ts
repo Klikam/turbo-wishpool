@@ -11,7 +11,7 @@ const projectRoot = path.join(dirname, '..');
  * NEXT_PUBLIC_* vars into the bundle on its own — so without this,
  * `process.env.NEXT_PUBLIC_BACKEND_URL` is undefined at runtime in the
  * browser and `getBackendUrl()` throws. Load the same files Next.js would
- * (.env, .env.local, ...) and pass NEXT_PUBLIC_* values through explicitly.
+ * (.env, .env, ...) and pass NEXT_PUBLIC_* values through explicitly.
  */
 const { combinedEnv } = nextEnv.loadEnvConfig(projectRoot);
 const publicEnv = Object.fromEntries(

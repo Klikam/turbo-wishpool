@@ -2,3 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
   - "packages/configs/*"
+
+peerDependencyRules:
+  allowedVersions:
+    type-fest: "5"
+    ajv-formats: "3"

@@ -1,7 +1,6 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, type Resolver, type SubmitHandler } from "react-hook-form";
 import { login as onLogin, register as onRegister } from "../../api/auth";
 import { getCredentialsSchema, type Credentials, type Mode } from "@repo/types";
@@ -11,21 +10,29 @@ import {
   ToastError,
   CredentialsField,
 } from "@repo/ui";
+import { signIn } from "next-auth/react";
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export default function CredentialsPage() {
   const [mode, setMode] = useState<Mode>("signin");
+  const router = useRouter();
 
   const onSubmit: SubmitHandler<Credentials> = async (data) => {
-    console.log(data);
-    const call = mode === "register" ? onRegister : onLogin;
-    const response = await call(data);
-    if (response.error) {
+    // const call = mode === "register" ? register : signIn;
+    const response = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false
+    });
+    if (response?.ok) {
+      console.log(`Logged in as ${data.email}`);
+      router.push("/dashboard");
+    } else {
       console.log(
-        response.error.message ??
+        response?.error ??
           `Something went wrong with the ${mode === "register" ? "registration" : "login"}`,
       );
-    } else {
-      console.log(response.data.user);
     }
   };
 
@@ -94,7 +101,9 @@ export default function CredentialsPage() {
           <ToastError message={errors.name.message} />
         )}
 
-        {errors.password?.message && <NotImplementedAlert />}
+        {errors.password?.message && (
+          <ToastError message={errors.password.message} />
+        )}
 
         <button
           type="submit"

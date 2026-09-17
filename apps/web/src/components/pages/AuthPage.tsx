@@ -1,7 +1,17 @@
-import CredentialsPage from "../subpages/Credentials";
+'use client'
+
+import CredentialsPage from "./Credentials";
 import { SocialButton } from "@repo/ui";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 export default function AuthPage() {
+  // const {data: session} = useSession()
+
+  // if(session && session.user)
+  //   return <Link href={'/dashboard'}>Dashboard</Link>
+  // return <Link href={'api/auth/signin'}></Link>
+
   return (
     <div className="lg:w-1/2 flex items-center justify-center p-8 lg:p-16">
       <div className="w-full max-w-sm">
