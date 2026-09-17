@@ -1,38 +1,40 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, type Resolver, type SubmitHandler } from "react-hook-form";
-import { login as onLogin, register as onRegister } from "../../api/auth";
-import { getCredentialsSchema, type Credentials, type Mode } from "@repo/types";
+import { type Resolver, type SubmitHandler, useForm } from "react-hook-form";
 import {
-  CredentialsButton,
-  NotImplementedAlert,
-  ToastError,
-  CredentialsField,
-} from "@repo/ui";
-import { signIn } from "next-auth/react";
-import NextAuth, { type NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+  getCredentialsSchema,
+  type Mode,
+  type RegisterCredentials,
+} from "@repo/types";
+import { CredentialsButton, CredentialsField, ToastError } from "@repo/ui";
+import { login as onLogin, register as onRegister } from "../../lib/auth";
 
 export default function CredentialsPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const router = useRouter();
 
-  const onSubmit: SubmitHandler<Credentials> = async (data) => {
-    // const call = mode === "register" ? register : signIn;
-    const response = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false
-    });
+  const onSubmit: SubmitHandler<RegisterCredentials> = async (data) => {
+    if (mode === "register") {
+      try {
+        await onRegister(data);
+        setMode("signin");
+      } catch (error) {
+        console.log(
+          error instanceof Error ? error.message : "Registration failed",
+        );
+      }
+      return;
+    }
+
+    const response = await onLogin(data);
+
     if (response?.ok) {
       console.log(`Logged in as ${data.email}`);
       router.push("/dashboard");
+      router.refresh();
     } else {
-      console.log(
-        response?.error ??
-          `Something went wrong with the ${mode === "register" ? "registration" : "login"}`,
-      );
+      console.log(response?.error ?? "Something went wrong with the login");
     }
   };
 
@@ -40,10 +42,10 @@ export default function CredentialsPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Credentials>({
+  } = useForm<RegisterCredentials>({
     resolver: zodResolver(
       getCredentialsSchema(mode),
-    ) as unknown as Resolver<Credentials>,
+    ) as unknown as Resolver<RegisterCredentials>,
   });
 
   return (

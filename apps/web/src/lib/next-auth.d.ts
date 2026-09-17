@@ -1,5 +1,4 @@
-import NextAuth from "next-auth";
-import { JWT } from "next-auth/jwt";
+import type { DefaultSession } from "next-auth";
 
 type BackendTokens = {
   accessToken: string;
@@ -10,7 +9,7 @@ type SessionUser = {
   id: string;
   email: string;
   name: string;
-};
+} & DefaultSession["user"];
 
 declare module "next-auth" {
   interface Session {
@@ -18,7 +17,10 @@ declare module "next-auth" {
     backendTokens: BackendTokens;
   }
 
-  interface User extends SessionUser {
+  interface User {
+    id: string;
+    email: string;
+    name: string;
     backendTokens: BackendTokens;
   }
 }
@@ -29,3 +31,5 @@ declare module "next-auth/jwt" {
     backendTokens: BackendTokens;
   }
 }
+
+export {};

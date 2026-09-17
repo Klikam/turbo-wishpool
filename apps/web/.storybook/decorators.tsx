@@ -1,8 +1,8 @@
-import type { Decorator } from '@storybook/nextjs';
-import { UserContextProvider } from '@/context/UserContext';
-import { storageHelper } from '@/utils/storageHelper';
-import type { User } from '@/types/user';
-import type { Wishlist } from '@/types/wishlist';
+import type { Decorator } from "@storybook/nextjs";
+import { SessionProvider } from "next-auth/react";
+import { storageHelper } from "@/utils/storageHelper";
+import type { User } from "@/types/user";
+import type { Wishlist } from "@/types/wishlist";
 
 export interface MockDataParams {
   /** The signed-in user, or null/undefined to render as a logged-out visitor. */
@@ -12,10 +12,8 @@ export interface MockDataParams {
 }
 
 /**
- * Wraps every story in the real UserContextProvider, seeded with a mock user,
- * and pre-populates localStorage with mock wishlists. This runs synchronously
- * during render (not in an effect), so it lands before a component's own
- * mount-time `useEffect` reads from localStorage or `useUserContext`.
+ * Wraps every story in NextAuth's SessionProvider and pre-populates localStorage
+ * with mock wishlists.
  *
  * Configure per-story via `parameters.mockData`.
  */
@@ -26,8 +24,25 @@ export const withMockData: Decorator = (Story, context) => {
   storageHelper.save(storageHelper.STORAGE_KEYS.wishlists, wishlists ?? []);
 
   return (
-    <UserContextProvider initialUser={user}>
+    <SessionProvider
+      session={
+        user
+          ? {
+              user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+              },
+              backendTokens: {
+                accessToken: "storybook-access-token",
+                refreshToken: "storybook-refresh-token",
+              },
+              expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            }
+          : null
+      }
+    >
       <Story />
-    </UserContextProvider>
+    </SessionProvider>
   );
 };

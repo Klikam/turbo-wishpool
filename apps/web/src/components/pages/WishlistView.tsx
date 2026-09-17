@@ -1,29 +1,29 @@
-'use client';
+"use client";
 
-import { useUserContext } from '@/context/UserContext';
-import { useGuestToken } from '@/hooks/useGuestToken';
-import type { GiftItem } from '@/types/giftItem';
-import { WishlistArraySchema, type Wishlist } from '@/types/wishlist';
-import { storageHelper } from '@/utils/storageHelper';
+import { useGuestToken } from "@/hooks/useGuestToken";
+import type { GiftItem } from "@/types/giftItem";
+import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
+import { storageHelper } from "@/utils/storageHelper";
 import {
   AddGiftModal,
   BackButton,
   EmptyState,
   GiftCard,
+  type NewGift,
   ShareLinkButton,
   WishlistHero,
-  type NewGift,
-} from '@repo/ui';
-import { Plus, ShoppingBag } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+} from "@repo/ui";
+import { Plus, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 interface WishlistViewProps {
   wishlistId: string;
 }
 
 export default function WishlistView({ wishlistId }: WishlistViewProps) {
-  const { currentUser } = useUserContext();
+  const { data: session } = useSession();
   const guestToken = useGuestToken();
   const router = useRouter();
 
@@ -41,12 +41,12 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
 
   const [showAddGift, setShowAddGift] = useState(false);
 
-  const wishlist = wishlists.find(w => w.id === wishlistId);
-  const isOwner = currentUser?.id === wishlist?.ownerId;
+  const wishlist = wishlists.find((w) => w.id === wishlistId);
+  const isOwner = session?.user.id === wishlist?.ownerId;
   const myHash = storageHelper.hashToken(guestToken);
 
   function goBack() {
-    router.push(currentUser ? '/dashboard' : '/');
+    router.push(session?.user ? "/dashboard" : "/");
   }
 
   function updateWishlists(updated: Wishlist[]) {
@@ -55,11 +55,11 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
   }
 
   function handleClaim(giftId: string) {
-    const updated = wishlists.map(w =>
+    const updated = wishlists.map((w) =>
       w.id === wishlistId
         ? {
             ...w,
-            gifts: w.gifts.map(g =>
+            gifts: w.gifts.map((g) =>
               g.id === giftId
                 ? { ...g, claimed: true, claimedByHash: myHash }
                 : g,
@@ -71,11 +71,11 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
   }
 
   function handleUnclaim(giftId: string) {
-    const updated = wishlists.map(w =>
+    const updated = wishlists.map((w) =>
       w.id === wishlistId
         ? {
             ...w,
-            gifts: w.gifts.map(g =>
+            gifts: w.gifts.map((g) =>
               g.id === giftId && g.claimedByHash === myHash
                 ? { ...g, claimed: false, claimedByHash: null }
                 : g,
@@ -87,9 +87,9 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
   }
 
   function handleDelete(giftId: string) {
-    const updated = wishlists.map(w =>
+    const updated = wishlists.map((w) =>
       w.id === wishlistId
-        ? { ...w, gifts: w.gifts.filter(g => g.id !== giftId) }
+        ? { ...w, gifts: w.gifts.filter((g) => g.id !== giftId) }
         : w,
     );
     updateWishlists(updated);
@@ -102,7 +102,7 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
       claimed: false,
       claimedByHash: null,
     };
-    const updated = wishlists.map(w =>
+    const updated = wishlists.map((w) =>
       w.id === wishlistId ? { ...w, gifts: [...w.gifts, gift] } : w,
     );
     updateWishlists(updated);
@@ -125,7 +125,7 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
     );
   }
 
-  const claimedCount = wishlist.gifts.filter(g => g.claimed).length;
+  const claimedCount = wishlist.gifts.filter((g) => g.claimed).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,7 +135,7 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
           <BackButton onClick={goBack} />
           <div className="flex items-center gap-2">
             <ShareLinkButton
-              url={`${typeof window === 'undefined' ? '' : window.location.origin}/wishlist/${wishlistId}`}
+              url={`${typeof window === "undefined" ? "" : window.location.origin}/wishlist/${wishlistId}`}
             />
             {isOwner && (
               <button
@@ -169,13 +169,13 @@ export default function WishlistView({ wishlistId }: WishlistViewProps) {
             icon={<ShoppingBag />}
             message={
               isOwner
-                ? 'No gifts yet — add your first one!'
-                : 'No gifts on this list yet.'
+                ? "No gifts yet — add your first one!"
+                : "No gifts on this list yet."
             }
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {wishlist.gifts.map(gift => (
+            {wishlist.gifts.map((gift) => (
               <GiftCard
                 key={gift.id}
                 name={gift.name}

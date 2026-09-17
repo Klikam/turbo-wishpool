@@ -35,7 +35,8 @@ const SignInSchema = z.object({
   password: passwordSchema,
 });
 
-export type Credentials = z.infer<typeof RegisterSchema>;
+export type RegisterCredentials = z.infer<typeof RegisterSchema>;
+export type SignInCredentials = z.infer<typeof SignInSchema>
 
 export type Mode = "signin" | "register";
 

@@ -2,12 +2,9 @@ import { http, HttpResponse } from 'msw';
 import { getBackendUrl } from '@/config/config';
 
 /**
- * MSW handlers for better-auth's REST endpoints, for use in Storybook stories
- * (via `parameters.msw.handlers`) so the sign-in/sign-up form can be
- * exercised end-to-end without a real backend. Response shapes were verified
- * against a real better-auth server: a 2xx body is `{ token, user }`, an
- * error body is `{ code, message }` and better-auth surfaces `message` as
- * `response.error.message`.
+ * MSW handlers for auth REST endpoints, for use in Storybook stories.
+ *
+ * The mock response shape mirrors the backend auth API used by the app.
  */
 const authUrl = (path: string) => `${getBackendUrl()}/api/auth${path}`;
 

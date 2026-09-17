@@ -10,7 +10,7 @@ import {
 import CredentialsPage from './Credentials';
 
 /**
- * Network calls to better-auth are mocked with MSW (see
+ * Network calls used by auth stories are mocked with MSW (see
  * `src/mocks/handlers.ts`), so these stories exercise the real submit flow —
  * including the resulting success/error state — without a backend running.
  */

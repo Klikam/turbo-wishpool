@@ -1,12 +1,12 @@
 import type { UseFormRegister } from "react-hook-form";
-import type { Credentials } from "@repo/types";
+import type { RegisterCredentials } from "@repo/types";
 
 interface CredentialsFieldProps {
   label: string;
-  field: keyof Credentials;
+  field: keyof RegisterCredentials;
   placeholder: string;
   type: React.HTMLInputTypeAttribute;
-  register: UseFormRegister<Credentials>;
+  register: UseFormRegister<RegisterCredentials>;
 }
 
 export function CredentialsField({

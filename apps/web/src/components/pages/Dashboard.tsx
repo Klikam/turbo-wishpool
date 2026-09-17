@@ -1,20 +1,23 @@
-'use client';
+"use client";
 
-import { useUserContext } from '@/context/UserContext';
-import { WishlistArraySchema, type Wishlist } from '@/types/wishlist';
-import { storageHelper } from '@/utils/storageHelper';
-import { DashboardHeader, EmptyState, WishlistCard } from '@repo/ui';
-import { PartyPopper, Plus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
+import { storageHelper } from "@/utils/storageHelper";
+import { DashboardHeader, EmptyState, WishlistCard } from "@repo/ui";
+import { PartyPopper, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export default function Dashboard() {
-  const { currentUser } = useUserContext();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!currentUser) router.replace('/');
-  }, [currentUser, router]);
+    if (status === "unauthenticated") router.replace("/");
+  }, [status, router]);
+
+  if (status === "loading") return <p>Loading...</p>;
+  if (!session?.user) return null;
 
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
 
@@ -28,9 +31,7 @@ export default function Dashboard() {
     );
   }, []);
 
-  if (!currentUser) return null;
-
-  const myLists = wishlists.filter((w) => w.ownerId === currentUser.id);
+  const myLists = wishlists.filter((w) => w.ownerId === session.user.id);
 
   function deleteList(id: string) {
     const updated = wishlists.filter((w) => w.id !== id);
@@ -39,12 +40,12 @@ export default function Dashboard() {
   }
 
   function handleLogout() {
-    console.log('Not implemented');
+    console.log("Not implemented");
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader userName={currentUser.name} onLogout={handleLogout} />
+      <DashboardHeader userName={session.user.name} onLogout={handleLogout} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Greeting */}
@@ -54,12 +55,12 @@ export default function Dashboard() {
               Your wishlists
             </p>
             <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground">
-              Hello, {currentUser.name.split(' ')[0]} 👋
+              Hello, {session.user.name.split(" ")[0]} 👋
             </h1>
           </div>
           <button
             onClick={() => {
-              router.push('/create');
+              router.push("/create");
             }}
             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-[#3a1232] transition-colors"
           >
@@ -73,9 +74,9 @@ export default function Dashboard() {
             icon={<PartyPopper />}
             message="No wishlists yet — create your first one!"
             action={{
-              label: 'Create wishlist',
+              label: "Create wishlist",
               onClick: () => {
-                router.push('/create');
+                router.push("/create");
               },
             }}
             bordered

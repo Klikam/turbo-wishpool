@@ -1,62 +1,59 @@
-'use client';
+"use client";
 
-import { useUserContext } from '@/context/UserContext';
-import { WishlistArraySchema, type Wishlist } from '@/types/wishlist';
-import { storageHelper } from '@/utils/storageHelper';
-import {
-  BackButton,
-  OccasionPicker,
-  TextField,
-  TextareaField,
-} from '@repo/ui';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
+import { storageHelper } from "@/utils/storageHelper";
+import { BackButton, OccasionPicker, TextareaField, TextField } from "@repo/ui";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+
+const occasions = [
+  "Birthday",
+  "Wedding",
+  "Baby shower",
+  "Anniversary",
+  "Christmas",
+  "Graduation",
+  "Housewarming",
+  "Other",
+] as const;
+
+type Occasion = (typeof occasions)[number];
+
+interface NewWishlist {
+  title: string;
+  occasion: Occasion;
+  date: string;
+  description: string;
+}
 
 export default function CreateWishlist() {
-  const { currentUser } = useUserContext();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!currentUser) router.replace('/');
-  }, [currentUser, router]);
-
-  const occasions = [
-    'Birthday',
-    'Wedding',
-    'Baby shower',
-    'Anniversary',
-    'Christmas',
-    'Graduation',
-    'Housewarming',
-    'Other',
-  ] as const;
-
-  type Ocasion = (typeof occasions)[number];
-
-  interface NewWishlist {
-    title: string;
-    occasion: Ocasion;
-    date: string;
-    description: string;
-  }
-
   const [form, setForm] = useState<NewWishlist>({
-    title: '',
+    title: "",
     occasion: occasions[0],
-    date: '',
-    description: '',
+    date: "",
+    description: "",
   });
 
-  if (!currentUser) return null;
+  useEffect(() => {
+    if (status === "unauthenticated") router.replace("/");
+  }, [status, router]);
+
+  const currentUser = session?.user;
 
   function handleCreate() {
     if (!currentUser) return;
     if (!form.title.trim()) return;
+
     const wishlists = storageHelper.load<Wishlist[]>(
       storageHelper.STORAGE_KEYS.wishlists,
       [],
       WishlistArraySchema,
     );
+
     const newList: Wishlist = {
       id: storageHelper.genId(),
       ownerId: currentUser.id,
@@ -68,12 +65,17 @@ export default function CreateWishlist() {
       gifts: [],
       createdAt: new Date().toISOString(),
     };
+
     storageHelper.save(storageHelper.STORAGE_KEYS.wishlists, [
       ...wishlists,
       newList,
     ]);
+
     router.push(`/wishlist/${newList.id}`);
   }
+
+  if (status === "loading") return null;
+  if (!currentUser) return null;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -81,7 +83,7 @@ export default function CreateWishlist() {
         <div className="mb-6">
           <BackButton
             onClick={() => {
-              router.push('/dashboard');
+              router.push("/dashboard");
             }}
           />
         </div>
@@ -107,7 +109,7 @@ export default function CreateWishlist() {
             occasions={occasions}
             value={form.occasion}
             onChange={(occasion) => {
-              setForm({ ...form, occasion: occasion as Ocasion });
+              setForm({ ...form, occasion: occasion as Occasion });
             }}
           />
 

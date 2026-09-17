@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useForm } from 'react-hook-form';
-import type { Credentials } from '@repo/types';
+import type { RegisterCredentials } from '@repo/types';
 import { CredentialsField } from './CredentialsField';
 
 function CredentialsFieldDemo(
   props: Omit<React.ComponentProps<typeof CredentialsField>, 'register'>,
 ) {
-  const { register } = useForm<Credentials>();
+  const { register } = useForm<RegisterCredentials>();
   return <CredentialsField {...props} register={register} />;
 }
 
