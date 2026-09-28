@@ -22,7 +22,7 @@ interface WishlistViewProps {
   wishlistId: string;
 }
 
-export default function WishlistView({ wishlistId }: WishlistViewProps) {
+export default function Wishlist({ wishlistId }: WishlistViewProps) {
   const { data: session } = useSession();
   const guestToken = useGuestToken();
   const router = useRouter();

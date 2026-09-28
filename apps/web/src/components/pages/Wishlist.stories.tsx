@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/nextjs';
 import { mockOtherUser, mockUser, mockWishlist } from '@/mocks/fixtures';
-import WishlistView from './WishlistView';
+import Wishlist from './Wishlist';
 
 /**
- * WishlistView reads its data from localStorage and compares `currentUser`
+ * Wishlist reads its data from localStorage and compares `currentUser`
  * against the wishlist's `ownerId` to decide owner vs. guest rendering.
  * The `withMockData` decorator seeds both before mount, so switching between
  * "owner" and "guest" here is just a matter of swapping the mock user.
  */
-const meta: Meta<typeof WishlistView> = {
-  title: 'Pages/WishlistView',
-  component: WishlistView,
+const meta: Meta<typeof Wishlist> = {
+  title: 'Pages/Wishlist',
+  component: Wishlist,
   args: {
     wishlistId: 'wishlist-1',
   },

@@ -5,6 +5,7 @@ import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { usersTable } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { hash } from 'bcrypt';
+import { UserWithPassword, User } from '@repo/types';
 
 @Injectable()
 export class UserService {
@@ -13,7 +14,7 @@ export class UserService {
     private db: Database,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<User[]> {
     const user = await this.db
       .select()
       .from(usersTable)
@@ -24,10 +25,6 @@ export class UserService {
         `User with email ${createUserDto.email} already existed.`,
       );
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: thrash, ...userData } = user[0]!;
-    console.log(userData);
-
     const newUser = await this.db
       .insert(usersTable)
       .values({
@@ -36,17 +33,27 @@ export class UserService {
       })
       .returning();
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = newUser.pop()!;
-
-    return result;
+    return newUser.map((user) => this.removePasswordFromUser(user));
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<UserWithPassword[]> {
     return this.db.select().from(usersTable).where(eq(usersTable.email, email));
   }
 
-  async findById(id: number) {
+  async findById(id: number): Promise<UserWithPassword[]> {
     return this.db.select().from(usersTable).where(eq(usersTable.id, id));
+  }
+
+  async findByIdNoPassword(id: number): Promise<User[]> {
+    const user = await this.findById(id);
+    return user.map((us) => this.removePasswordFromUser(us));
+  }
+
+  removePasswordFromUser(user: UserWithPassword): User {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    };
   }
 }

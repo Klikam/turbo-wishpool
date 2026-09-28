@@ -1,9 +1,10 @@
 interface AvatarProps {
   name: string;
   size?: "sm" | "md" | "lg";
+  handleUserDetails: () => {};
 }
 
-export function Avatar({ name, size = "md" }: AvatarProps) {
+export function Avatar({ name, size = "md", handleUserDetails }: AvatarProps) {
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -25,6 +26,7 @@ export function Avatar({ name, size = "md" }: AvatarProps) {
         : "w-9 h-9 text-sm";
   return (
     <div
+      onClick={() => console.log(handleUserDetails())}
       className={`${sz} ${color} rounded-full flex items-center justify-center text-white font-semibold shrink-0`}
     >
       {initials}

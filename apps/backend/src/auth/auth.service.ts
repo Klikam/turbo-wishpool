@@ -40,11 +40,9 @@ export class AuthService {
     const userArr = await this.userService.findByEmail(dto.email);
     const user = userArr[0];
 
-    if (user && (await compare(dto.password, user.password))) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
-      return result;
-    }
+    if (user && (await compare(dto.password, user.password)))
+      return this.userService.removePasswordFromUser(user);
+
     throw new UnauthorizedException(`Wrong password for user ${dto.email}`);
   }
 

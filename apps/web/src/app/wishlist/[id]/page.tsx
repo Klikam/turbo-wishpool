@@ -1,4 +1,4 @@
-import WishlistView from '@/components/pages/WishlistView';
+import Wishlist from '@/components/pages/Wishlist';
 
 export default async function WishlistPage({
   params,
@@ -6,5 +6,5 @@ export default async function WishlistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <WishlistView wishlistId={id} />;
+  return <Wishlist wishlistId={id} />;
 }

@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { logout as onLogout } from "@/lib/auth";
+import { api } from "@/utils/apiHelper";
+import { User } from "@repo/types";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -36,9 +38,14 @@ export default function Dashboard() {
     await onLogout();
   }
 
+  async function getUserDetails(id: string): Promise<User> {
+    console.log(`Getting details about user id ${id}`)
+    return await api(`user/${id}`)
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader userName={session.user.name} onLogout={handleLogout} />
+      <DashboardHeader userName={session.user.name} onLogout={handleLogout} handleUserDetails={() => getUserDetails(session.user.id)} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Greeting */}

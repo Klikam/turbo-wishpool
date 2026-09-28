@@ -9,6 +9,6 @@ export class UserController {
   @UseGuards(JwtGuard)
   @Get(':id')
   async getUserProfile(@Param('id') id: number) {
-    return await this.userService.findById(id);
+    return await this.userService.findByIdNoPassword(id);
   }
 }
