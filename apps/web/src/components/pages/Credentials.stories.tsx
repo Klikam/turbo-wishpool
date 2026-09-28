@@ -7,7 +7,7 @@ import {
   signUpEmailTaken,
   signUpSuccess,
 } from '@/mocks/handlers';
-import CredentialsPage from './Credentials';
+import CredentialsPage from './CredentialsPage';
 
 /**
  * Network calls used by auth stories are mocked with MSW (see
@@ -73,7 +73,7 @@ export const SignInInvalidCredentials: Story = {
       description: {
         story:
           'CredentialsPage currently only console.logs server errors ' +
-          '(see components/subpages/Credentials.tsx) — nothing renders on ' +
+          '(see components/subpages/CredentialsPage.tsx) — nothing renders on ' +
           'screen yet, so this story asserts on that console.log instead of ' +
           'DOM text. Open the browser console to see it.',
       },

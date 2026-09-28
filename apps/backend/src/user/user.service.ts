@@ -19,12 +19,14 @@ export class UserService {
       .from(usersTable)
       .where(eq(usersTable.email, createUserDto.email));
 
-    console.log(user);
-
     if (user && user.length > 0)
       throw new ConflictException(
         `User with email ${createUserDto.email} already existed.`,
       );
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: thrash, ...userData } = user[0]!;
+    console.log(userData);
 
     const newUser = await this.db
       .insert(usersTable)

@@ -1,7 +1,5 @@
-import { getBackendUrl } from '@/config/config';
-
 export async function api<T>(path: string): Promise<T> {
-  const response = await fetch(`${getBackendUrl()}${path}`, {
+  const response = await fetch(`backend/${path}`, {
     credentials: 'include',
   });
 

@@ -1,12 +1,13 @@
 "use client";
 
-import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
+import { type Wishlist } from "@/types/wishlist";
 import { storageHelper } from "@/utils/storageHelper";
 import { DashboardHeader, EmptyState, WishlistCard } from "@repo/ui";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { logout as onLogout } from "@/lib/auth";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -19,17 +20,8 @@ export default function Dashboard() {
   if (status === "loading") return <p>Loading...</p>;
   if (!session?.user) return null;
 
-  const [wishlists, setWishlists] = useState<Wishlist[]>([]);
-
-  useEffect(() => {
-    setWishlists(
-      storageHelper.load<Wishlist[]>(
-        storageHelper.STORAGE_KEYS.wishlists,
-        [],
-        WishlistArraySchema,
-      ),
-    );
-  }, []);
+  // TODO mock - remove it after integrating backend
+  const wishlists: Wishlist[] = [];
 
   const myLists = wishlists.filter((w) => w.ownerId === session.user.id);
 
@@ -39,8 +31,9 @@ export default function Dashboard() {
     window.location.reload();
   }
 
-  function handleLogout() {
-    console.log("Not implemented");
+  async function handleLogout() {
+    console.log(`Logged out user ${session?.user.name}`);
+    await onLogout();
   }
 
   return (
@@ -55,7 +48,7 @@ export default function Dashboard() {
               Your wishlists
             </p>
             <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground">
-              Hello, {session.user.name.split(" ")[0]} 👋
+              Hello, {session.user.name} 👋
             </h1>
           </div>
           <button

@@ -1,12 +1,10 @@
 import { http, HttpResponse } from 'msw';
-import { getBackendUrl } from '@/config/config';
-
 /**
  * MSW handlers for auth REST endpoints, for use in Storybook stories.
  *
  * The mock response shape mirrors the backend auth API used by the app.
  */
-const authUrl = (path: string) => `${getBackendUrl()}/api/auth${path}`;
+const authUrl = (path: string) => `backend/api/auth${path}`;
 
 export const mockAuthUser = {
   id: 'user-1',
