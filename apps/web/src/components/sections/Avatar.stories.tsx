@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Avatar } from "./Avatar";
+import type { Meta, StoryObj } from "@storybook/nextjs";
+import Avatar from "./Avatar";
 
 const meta: Meta<typeof Avatar> = {
   title: "UI/Common/Avatar",

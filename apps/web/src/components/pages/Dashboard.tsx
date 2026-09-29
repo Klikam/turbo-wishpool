@@ -2,14 +2,13 @@
 
 import { type Wishlist } from "@/types/wishlist";
 import { storageHelper } from "@/utils/storageHelper";
-import { DashboardHeader, EmptyState, WishlistCard } from "@repo/ui";
+import { EmptyState, WishlistCard } from "@repo/ui";
+import { DashboardHeader } from "@/components/sections/DashboardHeader";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { logout as onLogout } from "@/lib/auth";
-import { api } from "@/utils/apiHelper";
-import { User } from "@repo/types";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -38,24 +37,22 @@ export default function Dashboard() {
     await onLogout();
   }
 
-  async function getUserDetails(id: string): Promise<User> {
-    console.log(`Getting details about user id ${id}`)
-    return await api(`user/${id}`)
-  }
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader userName={session.user.name} onLogout={handleLogout} handleUserDetails={() => getUserDetails(session.user.id)} />
+      <DashboardHeader
+        userName={session.user.name}
+        onLogout={handleLogout}
+      />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-        {/* Greeting */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-widest text-[#C4797A] uppercase mb-1">
               Your wishlists
             </p>
             <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground">
-              Hello, {session.user.name} 👋
+              Hello, {session.user.name.split(" ")[0]} 👋
             </h1>
           </div>
           <button

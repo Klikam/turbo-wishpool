@@ -2,12 +2,16 @@
   "name": "@repo/types",
   "type": "module",
   "scripts": {
-    "dev": "tsc --watch --noEmit",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "check-types": "tsc --noEmit",
     "lint": "eslint --max-warnings 0"
   },
   "exports": {
-    ".": "./index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "dependencies": {
     "zod": "^4.4.3"
