@@ -3,15 +3,15 @@ import { mockUser, mockWishlist, mockWishlists } from '@/mocks/fixtures';
 import Dashboard from './Dashboard';
 
 /**
- * Dashboard only renders content once a user is signed in (it redirects to
- * `/` otherwise), so every story here seeds `parameters.mockData.user` via
- * the global `withMockData` decorator instead of going through a real login.
+ * Dashboard receives the signed-in user from its server component
+ * (`app/dashboard/page.tsx` redirects to `/` when there's no session), so
+ * stories pass `user` as an arg and seed wishlists via `parameters.mockData`.
  */
 const meta: Meta<typeof Dashboard> = {
   title: 'Pages/Dashboard',
   component: Dashboard,
-  parameters: {
-    mockData: { user: mockUser },
+  args: {
+    user: { id: mockUser.id, name: mockUser.name },
   },
 };
 
@@ -20,33 +20,20 @@ type Story = StoryObj<typeof meta>;
 
 export const WithWishlists: Story = {
   parameters: {
-    mockData: { user: mockUser, wishlists: mockWishlists },
+    mockData: { wishlists: mockWishlists },
   },
 };
 
 export const Empty: Story = {
   parameters: {
-    mockData: { user: mockUser, wishlists: [] },
+    mockData: { wishlists: [] },
   },
 };
 
 export const SingleWishlistNoGifts: Story = {
   parameters: {
     mockData: {
-      user: mockUser,
       wishlists: [mockWishlist({ gifts: [], date: '' })],
-    },
-  },
-};
-
-export const LoggedOut: Story = {
-  parameters: {
-    mockData: { user: null, wishlists: mockWishlists },
-    docs: {
-      description: {
-        story:
-          'No mock user: mirrors the real "not signed in" state, where the component redirects and renders nothing.',
-      },
     },
   },
 };

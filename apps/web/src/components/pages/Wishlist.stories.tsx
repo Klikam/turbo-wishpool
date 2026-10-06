@@ -3,49 +3,37 @@ import { mockOtherUser, mockUser, mockWishlist } from '@/mocks/fixtures';
 import Wishlist from './Wishlist';
 
 /**
- * Wishlist reads its data from localStorage and compares `currentUser`
+ * Wishlist reads its data from localStorage and compares `currentUserId`
  * against the wishlist's `ownerId` to decide owner vs. guest rendering.
- * The `withMockData` decorator seeds both before mount, so switching between
- * "owner" and "guest" here is just a matter of swapping the mock user.
+ * The `withMockData` decorator seeds the wishlists before mount, so switching
+ * between "owner" and "guest" here is just a matter of swapping the arg.
  */
 const meta: Meta<typeof Wishlist> = {
   title: 'Pages/Wishlist',
   component: Wishlist,
   args: {
     wishlistId: 'wishlist-1',
+    currentUserId: mockUser.id,
   },
   parameters: {
-    mockData: { wishlists: [mockWishlist({ id: 'wishlist-1' })] },
+    mockData: {
+      wishlists: [mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id })],
+    },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const AsOwner: Story = {
-  parameters: {
-    mockData: {
-      user: mockUser,
-      wishlists: [mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id })],
-    },
-  },
-};
+export const AsOwner: Story = {};
 
 export const AsGuest: Story = {
-  parameters: {
-    mockData: {
-      user: mockOtherUser,
-      wishlists: [mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id })],
-    },
-  },
+  args: { currentUserId: mockOtherUser.id },
 };
 
 export const AsAnonymousVisitor: Story = {
+  args: { currentUserId: null },
   parameters: {
-    mockData: {
-      user: null,
-      wishlists: [mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id })],
-    },
     docs: {
       description: {
         story: 'A shared link opened by someone who never signed in.',
@@ -57,7 +45,6 @@ export const AsAnonymousVisitor: Story = {
 export const NoGiftsYet: Story = {
   parameters: {
     mockData: {
-      user: mockUser,
       wishlists: [
         mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id, gifts: [] }),
       ],
@@ -67,10 +54,4 @@ export const NoGiftsYet: Story = {
 
 export const NotFound: Story = {
   args: { wishlistId: 'does-not-exist' },
-  parameters: {
-    mockData: {
-      user: mockUser,
-      wishlists: [mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id })],
-    },
-  },
 };

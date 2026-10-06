@@ -46,6 +46,42 @@ const config: StorybookConfig = {
   typescript: {
     reactDocgen: 'react-docgen-typescript',
   },
+
+  /**
+   * Server actions use cookies() and server-only env vars, so they can't run
+   * in the browser — swap them for their counterparts in src/actions/__mocks__/.
+   *
+   * This rewrites the request before resolution rather than using `sb.mock()`
+   * or `resolve.alias`: Storybook's mock plugin only intercepts relative or
+   * package imports, and the tsconfig-paths resolver wins over aliases for
+   * the `@/` imports components use.
+   */
+  webpackFinal: (webpackConfig) => {
+    webpackConfig.plugins ??= [];
+    webpackConfig.plugins.push({
+      // `webpack` types aren't resolvable from this package; type just what's used.
+      apply(compiler: {
+        webpack: {
+          NormalModuleReplacementPlugin: new (
+            pattern: RegExp,
+            replace: (resource: { request: string }) => void,
+          ) => { apply(compiler: unknown): void };
+        };
+      }) {
+        new compiler.webpack.NormalModuleReplacementPlugin(
+          /^@\/actions\/(auth|getUserDetails)$/,
+          (resource: { request: string }) => {
+            const name = resource.request.replace('@/actions/', '');
+            resource.request = path.join(
+              projectRoot,
+              `src/actions/__mocks__/${name}.ts`,
+            );
+          },
+        ).apply(compiler);
+      },
+    });
+    return webpackConfig;
+  },
 };
 
 export default config;

@@ -1,18 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/nextjs';
-import { expect, spyOn, userEvent, within } from 'storybook/test';
+import { expect, mocked, spyOn, userEvent, within } from 'storybook/test';
+import { login } from '@/actions/auth';
 import {
   mockAuthUser,
-  signInInvalidCredentials,
-  signInSuccess,
   signUpEmailTaken,
   signUpSuccess,
 } from '@/mocks/handlers';
 import CredentialsPage from './CredentialsPage';
 
 /**
- * Network calls used by auth stories are mocked with MSW (see
- * `src/mocks/handlers.ts`), so these stories exercise the real submit flow —
- * including the resulting success/error state — without a backend running.
+ * Sign-in calls the `login` server action, which is replaced by
+ * `actions/__mocks__/auth.ts` in Storybook (see `.storybook/main.ts`).
+ * Registration calls the backend from the browser and is mocked with MSW
+ * (see `src/mocks/handlers.ts`). Together these let the stories exercise the
+ * real submit flow without a backend running.
  */
 const meta: Meta<typeof CredentialsPage> = {
   title: 'Pages/Credentials',
@@ -52,28 +53,35 @@ async function fillAndSubmit(
 export const Default: Story = {};
 
 export const SignInSuccess: Story = {
-  parameters: { msw: { handlers: [signInSuccess] } },
   play: async ({ canvasElement }) => {
     const logSpy = spyOn(console, 'log').mockImplementation(() => undefined);
     await fillAndSubmit(
       canvasElement,
-      { email: 'emma@example.com', password: 'Passw0rd!' },
+      { email: mockAuthUser.email, password: 'Passw0rd!' },
       'Sign in',
     );
-    await expect(logSpy).toHaveBeenCalledWith(
+    await expect(login).toHaveBeenCalledWith(
       expect.objectContaining({ email: mockAuthUser.email }),
+    );
+    await expect(logSpy).toHaveBeenCalledWith(
+      `Logged in as ${mockAuthUser.email}`,
     );
   },
 };
 
 export const SignInInvalidCredentials: Story = {
+  beforeEach: () => {
+    mocked(login).mockResolvedValue({
+      ok: false,
+      error: 'Invalid credentials',
+    });
+  },
   parameters: {
-    msw: { handlers: [signInInvalidCredentials] },
     docs: {
       description: {
         story:
           'CredentialsPage currently only console.logs server errors ' +
-          '(see components/subpages/CredentialsPage.tsx) — nothing renders on ' +
+          '(see components/pages/CredentialsPage.tsx) — nothing renders on ' +
           'screen yet, so this story asserts on that console.log instead of ' +
           'DOM text. Open the browser console to see it.',
       },
@@ -83,32 +91,29 @@ export const SignInInvalidCredentials: Story = {
     const logSpy = spyOn(console, 'log').mockImplementation(() => undefined);
     await fillAndSubmit(
       canvasElement,
-      { email: 'emma@example.com', password: 'WrongPass1!' },
+      { email: mockAuthUser.email, password: 'WrongPass1!' },
       'Sign in',
     );
-    await expect(logSpy).toHaveBeenCalledWith('Invalid email or password');
+    await expect(logSpy).toHaveBeenCalledWith('Invalid credentials');
   },
 };
 
 export const SignUpSuccess: Story = {
   parameters: { msw: { handlers: [signUpSuccess] } },
   play: async ({ canvasElement }) => {
-    const logSpy = spyOn(console, 'log').mockImplementation(() => undefined);
-    await userEvent.click(
-      within(canvasElement).getByRole('button', { name: 'Register' }),
-    );
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Register' }));
     await fillAndSubmit(
       canvasElement,
       {
-        name: 'Emma Thornton',
-        email: 'emma@example.com',
+        name: mockAuthUser.name,
+        email: mockAuthUser.email,
         password: 'Passw0rd!',
       },
       'Create account',
     );
-    await expect(logSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ email: mockAuthUser.email }),
-    );
+    // A successful registration switches the form back to sign-in mode.
+    await expect(canvas.queryByLabelText('Full name')).not.toBeInTheDocument();
   },
 };
 
@@ -131,14 +136,14 @@ export const SignUpEmailTaken: Story = {
     await fillAndSubmit(
       canvasElement,
       {
-        name: 'Emma Thornton',
-        email: 'emma@example.com',
+        name: mockAuthUser.name,
+        email: mockAuthUser.email,
         password: 'Passw0rd!',
       },
       'Create account',
     );
     await expect(logSpy).toHaveBeenCalledWith(
-      'An account with this email already exists',
+      expect.stringContaining('already existed'),
     );
   },
 };

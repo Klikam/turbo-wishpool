@@ -5,8 +5,8 @@ import CreateWishlist from './CreateWishlist';
 const meta: Meta<typeof CreateWishlist> = {
   title: 'Pages/CreateWishlist',
   component: CreateWishlist,
-  parameters: {
-    mockData: { user: mockUser },
+  args: {
+    user: { id: mockUser.id, name: mockUser.name },
   },
 };
 
