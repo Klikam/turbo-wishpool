@@ -16,14 +16,13 @@ import {
 import { Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 
 interface WishlistViewProps {
   wishlistId: string;
+  currentUserId: string | null;
 }
 
-export default function Wishlist({ wishlistId }: WishlistViewProps) {
-  const { data: session } = useSession();
+export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProps) {
   const guestToken = useGuestToken();
   const router = useRouter();
 
@@ -42,11 +41,11 @@ export default function Wishlist({ wishlistId }: WishlistViewProps) {
   const [showAddGift, setShowAddGift] = useState(false);
 
   const wishlist = wishlists.find((w) => w.id === wishlistId);
-  const isOwner = session?.user.id === wishlist?.ownerId;
+  const isOwner = currentUserId !== null && currentUserId === wishlist?.ownerId;
   const myHash = storageHelper.hashToken(guestToken);
 
   function goBack() {
-    router.push(session?.user ? "/dashboard" : "/");
+    router.push(currentUserId ? "/dashboard" : "/");
   }
 
   function updateWishlists(updated: Wishlist[]) {

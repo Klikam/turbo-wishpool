@@ -36,6 +36,7 @@ export const withMockData: Decorator = (Story, context) => {
               backendTokens: {
                 accessToken: "storybook-access-token",
                 refreshToken: "storybook-refresh-token",
+                expiresAt: Date.now() + 60 * 60 * 1000,
               },
               expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             }

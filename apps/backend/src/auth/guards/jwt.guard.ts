@@ -18,13 +18,18 @@ export class JwtGuard implements CanActivate {
 
     if (!token) throw new UnauthorizedException('Lack of JWT token');
 
+    let payload: JwtPayload;
     try {
-      request.user = await this.jwtService.verifyAsync<JwtPayload>(token, {
+      payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: process.env.jwtSecretKey,
       });
     } catch {
       throw new UnauthorizedException();
     }
+
+    if (typeof payload.sub !== 'number') throw new UnauthorizedException();
+
+    request.user = payload;
     return true;
   }
 

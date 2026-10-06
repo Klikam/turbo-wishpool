@@ -1,8 +1,7 @@
-import type { RegisterCredentials, SignInCredentials } from "@repo/types";
-import { signIn, signOut } from "next-auth/react";
+import type { RegisterCredentials } from "@repo/types";
 
 export const register = async (credentials: RegisterCredentials) => {
-  const response = await fetch(`backend/auth/register`, {
+  const response = await fetch(`/backend/auth/register`, {
     method: "POST",
     body: JSON.stringify({
       name: credentials.name,
@@ -20,19 +19,3 @@ export const register = async (credentials: RegisterCredentials) => {
 
   return response.json();
 };
-
-export const login = async (credentials: SignInCredentials) => {
-  return await signIn("credentials", {
-    email: credentials.email,
-    password: credentials.password,
-    redirect: false,
-    callbackUrl: "/dashboard",
-  });
-};
-
-export const logout = async () => {
-  return await signOut({
-    callbackUrl: "/",
-    redirect: false
-  })
-}

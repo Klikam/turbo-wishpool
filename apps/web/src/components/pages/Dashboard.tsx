@@ -6,25 +6,20 @@ import { EmptyState, WishlistCard } from "@repo/ui";
 import { DashboardHeader } from "@/components/sections/DashboardHeader";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { logout as onLogout } from "@/lib/auth";
+import { logout as onLogout } from "@/actions/auth";
+import type { SessionUser } from "@/lib/session";
 
-export default function Dashboard() {
-  const { data: session, status } = useSession();
+interface DashboardProps {
+  user: Pick<SessionUser, "id" | "name">;
+}
+
+export default function Dashboard({ user }: DashboardProps) {
   const router = useRouter();
-
-  useEffect(() => {
-    if (status === "unauthenticated") router.replace("/");
-  }, [status, router]);
-
-  if (status === "loading") return <p>Loading...</p>;
-  if (!session?.user) return null;
 
   // TODO mock - remove it after integrating backend
   const wishlists: Wishlist[] = [];
 
-  const myLists = wishlists.filter((w) => w.ownerId === session.user.id);
+  const myLists = wishlists.filter((w) => w.ownerId === user.id);
 
   function deleteList(id: string) {
     const updated = wishlists.filter((w) => w.id !== id);
@@ -33,16 +28,18 @@ export default function Dashboard() {
   }
 
   async function handleLogout() {
-    console.log(`Logged out user ${session?.user.name}`);
+    console.log(`Logged out user ${user.name}`);
     await onLogout();
+    router.push("/");
+    router.refresh();
   }
 
 
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader
-        userName={session.user.name}
-        onLogout={handleLogout}
+        userName={user.name}
+        onLogout={() => void handleLogout()}
       />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
@@ -52,7 +49,7 @@ export default function Dashboard() {
               Your wishlists
             </p>
             <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground">
-              Hello, {session.user.name.split(" ")[0]} 👋
+              Hello, {user.name.split(" ")[0]} 👋
             </h1>
           </div>
           <button

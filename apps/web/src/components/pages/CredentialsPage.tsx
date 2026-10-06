@@ -8,7 +8,8 @@ import {
   type RegisterCredentials,
 } from "@repo/types";
 import { CredentialsButton, CredentialsField, ToastError } from "@repo/ui";
-import { login as onLogin, register as onRegister } from "../../lib/auth";
+import { login as onLogin } from "@/actions/auth";
+import { register as onRegister } from "@/lib/auth";
 
 export default function CredentialsPage() {
   const [mode, setMode] = useState<Mode>("signin");
@@ -29,12 +30,12 @@ export default function CredentialsPage() {
 
     const response = await onLogin(data);
 
-    if (response?.ok) {
+    if (response.ok) {
       console.log(`Logged in as ${data.email}`);
       router.push("/dashboard");
       router.refresh();
     } else {
-      console.log(response?.error ?? "Something went wrong with the login");
+      console.log(response.error);
     }
   };
 

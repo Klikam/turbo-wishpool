@@ -1,4 +1,7 @@
-import { JwtPayload } from './src/auth/interfaces/jwt-payload.interface';
+import {
+  JwtPayload,
+  RefreshJwtPayload,
+} from './src/auth/interfaces/jwt-payload.interface';
 
 declare global {
   namespace NodeJS {
@@ -13,6 +16,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: JwtPayload;
+      refreshSession?: RefreshJwtPayload;
     }
   }
 }

@@ -1,6 +1,8 @@
 export interface JwtPayload {
-  username: string;
-  sub: {
-    name: string;
-  };
+  sub: number;
+  email: string;
+}
+
+export interface RefreshJwtPayload extends JwtPayload {
+  sid: string;
 }

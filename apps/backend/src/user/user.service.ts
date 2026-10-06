@@ -28,7 +28,8 @@ export class UserService {
     const newUser = await this.db
       .insert(usersTable)
       .values({
-        ...createUserDto,
+        name: createUserDto.name,
+        email: createUserDto.email,
         password: await hash(createUserDto.password, 10),
       })
       .returning();

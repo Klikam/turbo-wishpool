@@ -1,20 +1,11 @@
 "use server";
 
-import { getServerSession } from "next-auth";
 import { User } from "@/types/user";
 import { api } from "@/utils/apiHelper";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { verifySession } from "@/lib/dal";
 
 export async function getUserDetails(): Promise<User> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Not authorized");
+  const { accessToken } = await verifySession();
 
-  const id = session.user.id;
-  const accessToken = session.backendTokens?.accessToken;
-  if (!accessToken) throw new Error("Not authorized");
-
-  const [user] = await api<User[]>(`user/${id}`, accessToken);
-  if (!user) throw new Error("User not found");
-
-  return user;
+  return await api<User>("user/me", accessToken);
 }

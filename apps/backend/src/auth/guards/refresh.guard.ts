@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { RefreshJwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class RefreshJwtGuard implements CanActivate {
@@ -18,13 +18,19 @@ export class RefreshJwtGuard implements CanActivate {
 
     if (!token) throw new UnauthorizedException('Lack of JWT token');
 
+    let payload: RefreshJwtPayload;
     try {
-      request.user = await this.jwtService.verifyAsync<JwtPayload>(token, {
+      payload = await this.jwtService.verifyAsync<RefreshJwtPayload>(token, {
         secret: process.env.jwtRefreshTokenKey,
       });
     } catch {
       throw new UnauthorizedException();
     }
+
+    if (typeof payload.sub !== 'number' || typeof payload.sid !== 'string')
+      throw new UnauthorizedException();
+
+    request.refreshSession = payload;
     return true;
   }
 

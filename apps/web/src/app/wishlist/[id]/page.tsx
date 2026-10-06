@@ -1,4 +1,5 @@
 import Wishlist from '@/components/pages/Wishlist';
+import { getOptionalSession } from '@/lib/dal';
 
 export default async function WishlistPage({
   params,
@@ -6,5 +7,7 @@ export default async function WishlistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <Wishlist wishlistId={id} />;
+  const session = await getOptionalSession();
+
+  return <Wishlist wishlistId={id} currentUserId={session?.user.id ?? null} />;
 }

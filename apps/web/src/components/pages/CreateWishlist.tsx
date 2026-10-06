@@ -4,8 +4,8 @@ import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
 import { storageHelper } from "@/utils/storageHelper";
 import { BackButton, OccasionPicker, TextareaField, TextField } from "@repo/ui";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useState } from "react";
+import type { SessionUser } from "@/lib/session";
 
 const occasions = [
   "Birthday",
@@ -27,8 +27,11 @@ interface NewWishlist {
   description: string;
 }
 
-export default function CreateWishlist() {
-  const { data: session, status } = useSession();
+interface CreateWishlistProps {
+  user: Pick<SessionUser, "id" | "name">;
+}
+
+export default function CreateWishlist({ user: currentUser }: CreateWishlistProps) {
   const router = useRouter();
 
   const [form, setForm] = useState<NewWishlist>({
@@ -38,14 +41,7 @@ export default function CreateWishlist() {
     description: "",
   });
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.replace("/");
-  }, [status, router]);
-
-  const currentUser = session?.user;
-
   function handleCreate() {
-    if (!currentUser) return;
     if (!form.title.trim()) return;
 
     const wishlists = storageHelper.load<Wishlist[]>(
@@ -73,9 +69,6 @@ export default function CreateWishlist() {
 
     router.push(`/wishlist/${newList.id}`);
   }
-
-  if (status === "loading") return null;
-  if (!currentUser) return null;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
