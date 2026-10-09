@@ -232,7 +232,7 @@ async function getResponse(event, client, requestId, requestInterceptedAt) {
 
     // Remove the "accept" header value that marked this request as passthrough.
     // This prevents request alteration and also keeps it compliant with the
-    // user-defined CORS policies.
+    // users-defined CORS policies.
     const acceptHeader = headers.get('accept')
     if (acceptHeader) {
       const values = acceptHeader.split(',').map((value) => value.trim())

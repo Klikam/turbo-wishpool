@@ -10,8 +10,8 @@ export interface MockDataParams {
 /**
  * Pre-populates localStorage with mock wishlists before every story.
  *
- * Configure per-story via `parameters.mockData`. The signed-in user is no
- * longer global state — pages receive it as a prop (`user` / `currentUserId`)
+ * Configure per-story via `parameters.mockData`. The signed-in users is no
+ * longer global state — pages receive it as a prop (`users` / `currentUserId`)
  * from their server component, so stories pass it through `args` instead.
  */
 export const withMockData: Decorator = (Story, context) => {

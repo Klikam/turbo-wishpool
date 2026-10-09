@@ -1,6 +1,7 @@
 import {
   IsByteLength,
   IsEmail,
+  IsNotEmpty,
   IsString,
   Length,
   MaxLength,
@@ -12,6 +13,7 @@ export class CreateUserDto {
   name!: string;
 
   @IsEmail()
+  @IsNotEmpty()
   @MaxLength(255)
   email!: string;
 

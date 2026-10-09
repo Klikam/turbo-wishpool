@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Wishpool",
   description:
-    "Create and manage personalized gift wishlists while preventing duplicates, allowing friends to anonymously claim gifts for special occasions.",
+    "Create and manage personalized gifts wishlists while preventing duplicates, allowing friends to anonymously claim gifts for special occasions.",
   robots: "noindex, nofollow",
 };
 

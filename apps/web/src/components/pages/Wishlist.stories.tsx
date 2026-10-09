@@ -4,7 +4,7 @@ import Wishlist from './Wishlist';
 
 /**
  * Wishlist reads its data from localStorage and compares `currentUserId`
- * against the wishlist's `ownerId` to decide owner vs. guest rendering.
+ * against the wishlists's `ownerId` to decide owner vs. guest rendering.
  * The `withMockData` decorator seeds the wishlists before mount, so switching
  * between "owner" and "guest" here is just a matter of swapping the arg.
  */
@@ -12,12 +12,12 @@ const meta: Meta<typeof Wishlist> = {
   title: 'Pages/Wishlist',
   component: Wishlist,
   args: {
-    wishlistId: 'wishlist-1',
+    wishlistId: 'wishlists-1',
     currentUserId: mockUser.id,
   },
   parameters: {
     mockData: {
-      wishlists: [mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id })],
+      wishlists: [mockWishlist({ id: 'wishlists-1', ownerId: mockUser.id })],
     },
   },
 };
@@ -46,7 +46,7 @@ export const NoGiftsYet: Story = {
   parameters: {
     mockData: {
       wishlists: [
-        mockWishlist({ id: 'wishlist-1', ownerId: mockUser.id, gifts: [] }),
+        mockWishlist({ id: 'wishlists-1', ownerId: mockUser.id, gifts: [] }),
       ],
     },
   },

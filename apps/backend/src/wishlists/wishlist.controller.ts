@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { WishlistService } from './wishlist.service';
 
-@Controller('wishlist')
+@Controller('wishlists')
 export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 }

@@ -29,7 +29,7 @@ export const WithAction: Story = {
   args: {
     icon: <PartyPopper />,
     message: "No wishlists yet — create your first one!",
-    action: { label: "Create wishlist", onClick: () => {} },
+    action: { label: "Create wishlists", onClick: () => {} },
     bordered: true,
   },
 };

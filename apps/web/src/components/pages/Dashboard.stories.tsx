@@ -3,9 +3,9 @@ import { mockUser, mockWishlist, mockWishlists } from '@/mocks/fixtures';
 import Dashboard from './Dashboard';
 
 /**
- * Dashboard receives the signed-in user from its server component
+ * Dashboard receives the signed-in users from its server component
  * (`app/dashboard/page.tsx` redirects to `/` when there's no session), so
- * stories pass `user` as an arg and seed wishlists via `parameters.mockData`.
+ * stories pass `users` as an arg and seed wishlists via `parameters.mockData`.
  */
 const meta: Meta<typeof Dashboard> = {
   title: 'Pages/Dashboard',

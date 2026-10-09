@@ -9,9 +9,9 @@ import {
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Request as ExpressRequest } from 'express';
-import { CreateUserDto } from '../user/dto/create-user.dto';
-import { UserService } from '../user/user.service';
-import { LoginDto } from './dto/auth.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UserService } from '../users/user.service';
+import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { RefreshJwtGuard } from './guards/refresh.guard';
 

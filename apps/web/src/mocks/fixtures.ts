@@ -3,7 +3,7 @@ import type { User } from '@/types/user';
 import type { Wishlist } from '@/types/wishlist';
 
 export const mockUser: User = {
-  id: 'user-1',
+  id: 'users-1',
   name: 'Emma Thornton',
   email: 'emma@example.com',
   avatar: '',
@@ -11,7 +11,7 @@ export const mockUser: User = {
 };
 
 export const mockOtherUser: User = {
-  id: 'user-2',
+  id: 'users-2',
   name: 'Noah Bennett',
   email: 'noah@example.com',
   avatar: '',
@@ -19,7 +19,7 @@ export const mockOtherUser: User = {
 };
 
 export const mockGift = (overrides: Partial<GiftItem> = {}): GiftItem => ({
-  id: 'gift-1',
+  id: 'gifts-1',
   name: 'Wireless headphones',
   description: 'Noise-cancelling, black or white',
   price: '€ 149.00',
@@ -33,7 +33,7 @@ export const mockGift = (overrides: Partial<GiftItem> = {}): GiftItem => ({
 export const mockGifts: GiftItem[] = [
   mockGift(),
   mockGift({
-    id: 'gift-2',
+    id: 'gifts-2',
     name: 'Coffee grinder',
     description: 'Burr grinder, stainless steel',
     price: '€ 89.00',
@@ -42,7 +42,7 @@ export const mockGifts: GiftItem[] = [
     claimedByHash: 'guest-hash-someone-else',
   }),
   mockGift({
-    id: 'gift-3',
+    id: 'gifts-3',
     name: 'Cookbook: Weeknight Pasta',
     description: '',
     price: '',
@@ -52,7 +52,7 @@ export const mockGifts: GiftItem[] = [
 ];
 
 export const mockWishlist = (overrides: Partial<Wishlist> = {}): Wishlist => ({
-  id: 'wishlist-1',
+  id: 'wishlists-1',
   ownerId: mockUser.id,
   ownerName: mockUser.name,
   title: "Emma's 30th Birthday",
@@ -68,7 +68,7 @@ export const mockWishlist = (overrides: Partial<Wishlist> = {}): Wishlist => ({
 export const mockWishlists: Wishlist[] = [
   mockWishlist(),
   mockWishlist({
-    id: 'wishlist-2',
+    id: 'wishlists-2',
     title: 'Housewarming Party',
     occasion: 'Housewarming',
     date: '',

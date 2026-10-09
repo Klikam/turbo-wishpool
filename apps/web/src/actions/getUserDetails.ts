@@ -7,5 +7,5 @@ import { verifySession } from "@/lib/dal";
 export async function getUserDetails(): Promise<User> {
   const { accessToken } = await verifySession();
 
-  return await api<User>("user/me", accessToken);
+  return await api<User>("users/me", accessToken);
 }
