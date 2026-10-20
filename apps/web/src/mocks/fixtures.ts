@@ -22,11 +22,12 @@ export const mockGift = (overrides: Partial<GiftItem> = {}): GiftItem => ({
   id: 'gifts-1',
   name: 'Wireless headphones',
   description: 'Noise-cancelling, black or white',
-  price: '€ 149.00',
+  price: 149,
   url: 'https://example.com/headphones',
-  imageUrl: '',
-  claimed: false,
-  claimedByHash: null,
+  imageUrl: null,
+  reserved: false,
+  reservedByName: null,
+  reservedByMe: false,
   ...overrides,
 });
 
@@ -36,18 +37,18 @@ export const mockGifts: GiftItem[] = [
     id: 'gifts-2',
     name: 'Coffee grinder',
     description: 'Burr grinder, stainless steel',
-    price: '€ 89.00',
-    url: '',
-    claimed: true,
-    claimedByHash: 'guest-hash-someone-else',
+    price: 89,
+    url: null,
+    reserved: true,
+    reservedByName: 'Noah Bennett',
+    reservedByMe: false,
   }),
   mockGift({
     id: 'gifts-3',
     name: 'Cookbook: Weeknight Pasta',
-    description: '',
-    price: '',
+    description: null,
+    price: null,
     url: 'https://example.com/cookbook',
-    claimed: false,
   }),
 ];
 
@@ -56,12 +57,10 @@ export const mockWishlist = (overrides: Partial<Wishlist> = {}): Wishlist => ({
   ownerId: mockUser.id,
   ownerName: mockUser.name,
   title: "Emma's 30th Birthday",
-  occasion: 'Birthday',
+  occasion: 'birthday',
   date: '2026-11-14',
-  description:
-    'Thanks for celebrating with me! Anything on this list would make me so happy.',
+  note: 'Thanks for celebrating with me! Anything on this list would make me so happy.',
   gifts: mockGifts,
-  createdAt: '2026-08-01T10:00:00.000Z',
   ...overrides,
 });
 
@@ -70,10 +69,9 @@ export const mockWishlists: Wishlist[] = [
   mockWishlist({
     id: 'wishlists-2',
     title: 'Housewarming Party',
-    occasion: 'Housewarming',
-    date: '',
-    description: '',
+    occasion: 'housewarming',
+    date: null,
+    note: null,
     gifts: [],
-    createdAt: '2026-07-15T10:00:00.000Z',
   }),
 ];

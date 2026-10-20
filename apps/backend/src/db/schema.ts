@@ -57,4 +57,10 @@ export const giftsTable = pgTable.withRLS('gifts', {
   price: numeric({ precision: 10, scale: 2, mode: 'number' }),
   url: varchar({ length: 2048 }),
   imageUrl: varchar({ length: 2048 }),
+  reservedByUserId: integer().references(() => usersTable.id, {
+    onDelete: 'set null',
+  }),
+  reservedByName: varchar({ length: 255 }),
+  reservedByGuestTokenHash: varchar({ length: 64 }),
+  reservedAt: timestamp({ withTimezone: true }),
 });

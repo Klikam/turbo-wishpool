@@ -5,6 +5,7 @@ import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
 import { WishlistModule } from './wishlists/wishlist.module';
 import { GiftModule } from './gifts/gift.module';
+import { PublicModule } from './public/public.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GiftModule } from './gifts/gift.module';
     AuthModule,
     WishlistModule,
     GiftModule,
+    PublicModule,
   ],
   controllers: [],
   providers: [],

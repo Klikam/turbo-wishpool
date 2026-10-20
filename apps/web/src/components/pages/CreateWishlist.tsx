@@ -1,24 +1,24 @@
 "use client";
 
-import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
+import {
+  OCCASION_LABELS,
+  type Occasion,
+  type Wishlist,
+  WishlistArraySchema,
+} from "@/types/wishlist";
+import { emptyToNull } from "@/utils/giftHelper";
 import { storageHelper } from "@/utils/storageHelper";
 import { BackButton, OccasionPicker, TextareaField, TextField } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { SessionUser } from "@/lib/session";
 
-const occasions = [
-  "Birthday",
-  "Wedding",
-  "Baby shower",
-  "Anniversary",
-  "Christmas",
-  "Graduation",
-  "Housewarming",
-  "Other",
-] as const;
+const occasionLabels = Object.values(OCCASION_LABELS);
 
-type Occasion = (typeof occasions)[number];
+function occasionFromLabel(label: string): Occasion {
+  const entry = Object.entries(OCCASION_LABELS).find(([, l]) => l === label);
+  return (entry?.[0] as Occasion | undefined) ?? "other";
+}
 
 interface NewWishlist {
   title: string;
@@ -36,7 +36,7 @@ export default function CreateWishlist({ user: currentUser }: CreateWishlistProp
 
   const [form, setForm] = useState<NewWishlist>({
     title: "",
-    occasion: occasions[0],
+    occasion: "birthday",
     date: "",
     description: "",
   });
@@ -56,10 +56,9 @@ export default function CreateWishlist({ user: currentUser }: CreateWishlistProp
       ownerName: currentUser.name,
       title: form.title.trim(),
       occasion: form.occasion,
-      date: form.date,
-      description: form.description.trim(),
+      date: emptyToNull(form.date),
+      note: emptyToNull(form.description),
       gifts: [],
-      createdAt: new Date().toISOString(),
     };
 
     storageHelper.save(storageHelper.STORAGE_KEYS.wishlists, [
@@ -99,10 +98,10 @@ export default function CreateWishlist({ user: currentUser }: CreateWishlistProp
           />
 
           <OccasionPicker
-            occasions={occasions}
-            value={form.occasion}
-            onChange={(occasion) => {
-              setForm({ ...form, occasion: occasion as Occasion });
+            occasions={occasionLabels}
+            value={OCCASION_LABELS[form.occasion]}
+            onChange={(label) => {
+              setForm({ ...form, occasion: occasionFromLabel(label) });
             }}
           />
 

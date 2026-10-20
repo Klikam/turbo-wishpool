@@ -1,6 +1,6 @@
 "use client";
 
-import { type Wishlist } from "@/types/wishlist";
+import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import { storageHelper } from "@/utils/storageHelper";
 import { EmptyState, WishlistCard } from "@repo/ui";
 import { DashboardHeader } from "@/components/sections/DashboardHeader";
@@ -78,13 +78,13 @@ export default function Dashboard({ user }: DashboardProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {myLists.map((list) => {
-              const claimed = list.gifts.filter((g) => g.claimed).length;
+              const claimed = list.gifts.filter((g) => g.reserved).length;
               return (
                 <WishlistCard
                   key={list.id}
-                  occasion={list.occasion}
+                  occasion={OCCASION_LABELS[list.occasion ?? "other"]}
                   title={list.title}
-                  date={list.date}
+                  date={list.date ?? undefined}
                   giftsCount={list.gifts.length}
                   claimedCount={claimed}
                   onOpen={() => {

@@ -1,8 +1,12 @@
 "use client";
 
-import { useGuestToken } from "@/hooks/useGuestToken";
 import type { GiftItem } from "@/types/giftItem";
-import { type Wishlist, WishlistArraySchema } from "@/types/wishlist";
+import {
+  OCCASION_LABELS,
+  type Wishlist,
+  WishlistArraySchema,
+} from "@/types/wishlist";
+import { emptyToNull, formatPrice, parsePrice } from "@/utils/giftHelper";
 import { storageHelper } from "@/utils/storageHelper";
 import {
   AddGiftModal,
@@ -23,7 +27,6 @@ interface WishlistViewProps {
 }
 
 export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProps) {
-  const guestToken = useGuestToken();
   const router = useRouter();
 
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
@@ -42,7 +45,6 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
 
   const wishlist = wishlists.find((w) => w.id === wishlistId);
   const isOwner = currentUserId !== null && currentUserId === wishlist?.ownerId;
-  const myHash = storageHelper.hashToken(guestToken);
 
   function goBack() {
     router.push(currentUserId ? "/dashboard" : "/");
@@ -60,7 +62,12 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
             ...w,
             gifts: w.gifts.map((g) =>
               g.id === giftId
-                ? { ...g, claimed: true, claimedByHash: myHash }
+                ? {
+                    ...g,
+                    reserved: true,
+                    reservedByName: "Guest", // TODO mock - the real flow asks visitors for a name
+                    reservedByMe: true,
+                  }
                 : g,
             ),
           }
@@ -75,8 +82,13 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
         ? {
             ...w,
             gifts: w.gifts.map((g) =>
-              g.id === giftId && g.claimedByHash === myHash
-                ? { ...g, claimed: false, claimedByHash: null }
+              g.id === giftId && g.reservedByMe
+                ? {
+                    ...g,
+                    reserved: false,
+                    reservedByName: null,
+                    reservedByMe: false,
+                  }
                 : g,
             ),
           }
@@ -97,9 +109,14 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
   function handleAddGift(newGift: NewGift) {
     const gift: GiftItem = {
       id: storageHelper.genId(),
-      ...newGift,
-      claimed: false,
-      claimedByHash: null,
+      name: newGift.name,
+      description: emptyToNull(newGift.description),
+      price: parsePrice(newGift.price),
+      url: emptyToNull(newGift.url),
+      imageUrl: emptyToNull(newGift.imageUrl),
+      reserved: false,
+      reservedByName: null,
+      reservedByMe: false,
     };
     const updated = wishlists.map((w) =>
       w.id === wishlistId ? { ...w, gifts: [...w.gifts, gift] } : w,
@@ -124,7 +141,7 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
     );
   }
 
-  const claimedCount = wishlist.gifts.filter((g) => g.claimed).length;
+  const claimedCount = wishlist.gifts.filter((g) => g.reserved).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,10 +170,10 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <WishlistHero
-          occasion={wishlist.occasion}
+          occasion={OCCASION_LABELS[wishlist.occasion ?? "other"]}
           title={wishlist.title}
-          description={wishlist.description}
-          date={wishlist.date}
+          description={wishlist.note ?? undefined}
+          date={wishlist.date ?? undefined}
           giftsCount={wishlist.gifts.length}
           claimedCount={claimedCount}
           isOwner={isOwner}
@@ -178,13 +195,13 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
               <GiftCard
                 key={gift.id}
                 name={gift.name}
-                description={gift.description}
-                price={gift.price}
-                url={gift.url}
-                imageUrl={gift.imageUrl}
-                claimed={gift.claimed}
+                description={gift.description ?? undefined}
+                price={gift.price === null ? undefined : formatPrice(gift.price)}
+                url={gift.url ?? undefined}
+                imageUrl={gift.imageUrl ?? undefined}
+                claimed={gift.reserved}
                 isOwner={isOwner}
-                isMine={gift.claimedByHash === myHash}
+                isMine={gift.reservedByMe}
                 onClaim={() => {
                   handleClaim(gift.id);
                 }}
