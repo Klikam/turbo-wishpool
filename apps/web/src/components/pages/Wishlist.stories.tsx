@@ -1,38 +1,56 @@
 import type { Meta, StoryObj } from '@storybook/nextjs';
-import { mockOtherUser, mockUser, mockWishlist } from '@/mocks/fixtures';
+import { mocked } from 'storybook/test';
+import { getPublicWishlist } from '@/actions/wishlists';
+import { mockGift, mockWishlist } from '@/mocks/fixtures';
 import Wishlist from './Wishlist';
 
 /**
- * Wishlist reads its data from localStorage and compares `currentUserId`
- * against the wishlists's `ownerId` to decide owner vs. guest rendering.
- * The `withMockData` decorator seeds the wishlists before mount, so switching
- * between "owner" and "guest" here is just a matter of swapping the arg.
+ * Wishlist loads itself through the `getPublicWishlist` server action, which
+ * Storybook replaces with `actions/__mocks__/wishlists.ts`. The backend decides
+ * owner vs. guest (`isOwner`), so each story picks a view by what the mocked
+ * action resolves to.
  */
 const meta: Meta<typeof Wishlist> = {
   title: 'Pages/Wishlist',
   component: Wishlist,
   args: {
     wishlistId: 'wishlists-1',
-    currentUserId: mockUser.id,
+    isSignedIn: true,
   },
-  parameters: {
-    mockData: {
-      wishlists: [mockWishlist({ id: 'wishlists-1', ownerId: mockUser.id })],
-    },
+  beforeEach: () => {
+    mocked(getPublicWishlist).mockResolvedValue(mockWishlist());
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const AsOwner: Story = {};
+export const AsOwner: Story = {
+  beforeEach: () => {
+    // Owners never see reservations on their own list.
+    mocked(getPublicWishlist).mockResolvedValue(
+      mockWishlist({
+        gifts: [mockGift(), mockGift({ id: 'gifts-2', name: 'Coffee grinder' })],
+      }),
+    );
+  },
+};
 
 export const AsGuest: Story = {
-  args: { currentUserId: mockOtherUser.id },
+  beforeEach: () => {
+    mocked(getPublicWishlist).mockResolvedValue(
+      mockWishlist({ isOwner: false }),
+    );
+  },
 };
 
 export const AsAnonymousVisitor: Story = {
-  args: { currentUserId: null },
+  args: { isSignedIn: false },
+  beforeEach: () => {
+    mocked(getPublicWishlist).mockResolvedValue(
+      mockWishlist({ isOwner: false }),
+    );
+  },
   parameters: {
     docs: {
       description: {
@@ -43,15 +61,13 @@ export const AsAnonymousVisitor: Story = {
 };
 
 export const NoGiftsYet: Story = {
-  parameters: {
-    mockData: {
-      wishlists: [
-        mockWishlist({ id: 'wishlists-1', ownerId: mockUser.id, gifts: [] }),
-      ],
-    },
+  beforeEach: () => {
+    mocked(getPublicWishlist).mockResolvedValue(mockWishlist({ gifts: [] }));
   },
 };
 
 export const NotFound: Story = {
-  args: { wishlistId: 'does-not-exist' },
+  beforeEach: () => {
+    mocked(getPublicWishlist).mockResolvedValue(null);
+  },
 };

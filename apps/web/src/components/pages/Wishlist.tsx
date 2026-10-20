@@ -1,11 +1,15 @@
 "use client";
 
-import type { GiftItem } from "@/types/giftItem";
 import {
-  OCCASION_LABELS,
-  type Wishlist,
-  WishlistArraySchema,
-} from "@/types/wishlist";
+  addGift,
+  cancelReservation,
+  deleteGift,
+  getPublicWishlist,
+  reserveGift,
+} from "@/actions/wishlists";
+import { useGuestToken } from "@/hooks/useGuestToken";
+import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
+import type { ActionResult } from "@/utils/actionResult";
 import { emptyToNull, formatPrice, parsePrice } from "@/utils/giftHelper";
 import { storageHelper } from "@/utils/storageHelper";
 import {
@@ -13,135 +17,131 @@ import {
   BackButton,
   EmptyState,
   GiftCard,
+  GuestNameModal,
   type NewGift,
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
 import { Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import z from "zod";
 
 interface WishlistViewProps {
   wishlistId: string;
-  currentUserId: string | null;
+  isSignedIn: boolean;
 }
 
-export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProps) {
-  const router = useRouter();
+type LoadStatus = "loading" | "ready" | "notFound" | "error";
 
-  const [wishlists, setWishlists] = useState<Wishlist[]>([]);
+export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) {
+  const router = useRouter();
+  const guestToken = useGuestToken();
+
+  const [wishlist, setWishlist] = useState<Wishlist | null>(null);
+  const [status, setStatus] = useState<LoadStatus>("loading");
+  const [showAddGift, setShowAddGift] = useState(false);
+  // Gift a guest is about to reserve, while the name dialog is open.
+  const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
+
+  const isOwner = wishlist?.isOwner ?? false;
+
+  const load = useCallback(async () => {
+    try {
+      const loaded = await getPublicWishlist(wishlistId, guestToken);
+      setWishlist(loaded);
+      setStatus(loaded ? "ready" : "notFound");
+    } catch (e) {
+      console.error(e);
+      setStatus("error");
+    }
+  }, [wishlistId, guestToken]);
 
   useEffect(() => {
-    setWishlists(
-      storageHelper.load(
-        storageHelper.STORAGE_KEYS.wishlists,
-        [],
-        WishlistArraySchema,
-      ),
-    );
-  }, []);
-
-  const [showAddGift, setShowAddGift] = useState(false);
-
-  const wishlist = wishlists.find((w) => w.id === wishlistId);
-  const isOwner = currentUserId !== null && currentUserId === wishlist?.ownerId;
+    // The guest token is only known after mount.
+    if (guestToken) void load();
+  }, [guestToken, load]);
 
   function goBack() {
-    router.push(currentUserId ? "/dashboard" : "/");
+    router.push(isSignedIn ? "/dashboard" : "/");
   }
 
-  function updateWishlists(updated: Wishlist[]) {
-    setWishlists(updated);
-    storageHelper.save(storageHelper.STORAGE_KEYS.wishlists, updated);
+  /** Runs a mutation, reports a failure, then re-syncs with the backend. */
+  async function mutate(run: () => Promise<ActionResult<unknown>>) {
+    const result = await run();
+    if (!result.ok) toast.error(result.error);
+    await load();
+    return result.ok;
   }
 
   function handleClaim(giftId: string) {
-    const updated = wishlists.map((w) =>
-      w.id === wishlistId
-        ? {
-            ...w,
-            gifts: w.gifts.map((g) =>
-              g.id === giftId
-                ? {
-                    ...g,
-                    reserved: true,
-                    reservedByName: "Guest", // TODO mock - the real flow asks visitors for a name
-                    reservedByMe: true,
-                  }
-                : g,
-            ),
-          }
-        : w,
-    );
-    updateWishlists(updated);
+    if (isSignedIn) {
+      void mutate(() => reserveGift(wishlistId, giftId, guestToken));
+    } else {
+      setClaimingGiftId(giftId);
+    }
+  }
+
+  function handleGuestClaim(name: string) {
+    if (!claimingGiftId) return;
+    const giftId = claimingGiftId;
+    setClaimingGiftId(null);
+    storageHelper.save(storageHelper.STORAGE_KEYS.guestName, name);
+    void mutate(() => reserveGift(wishlistId, giftId, guestToken, name));
   }
 
   function handleUnclaim(giftId: string) {
-    const updated = wishlists.map((w) =>
-      w.id === wishlistId
-        ? {
-            ...w,
-            gifts: w.gifts.map((g) =>
-              g.id === giftId && g.reservedByMe
-                ? {
-                    ...g,
-                    reserved: false,
-                    reservedByName: null,
-                    reservedByMe: false,
-                  }
-                : g,
-            ),
-          }
-        : w,
-    );
-    updateWishlists(updated);
+    void mutate(() => cancelReservation(wishlistId, giftId, guestToken));
   }
 
   function handleDelete(giftId: string) {
-    const updated = wishlists.map((w) =>
-      w.id === wishlistId
-        ? { ...w, gifts: w.gifts.filter((g) => g.id !== giftId) }
-        : w,
-    );
-    updateWishlists(updated);
+    void mutate(() => deleteGift(wishlistId, giftId));
   }
 
-  function handleAddGift(newGift: NewGift) {
-    const gift: GiftItem = {
-      id: storageHelper.genId(),
-      name: newGift.name,
-      description: emptyToNull(newGift.description),
-      price: parsePrice(newGift.price),
-      url: emptyToNull(newGift.url),
-      imageUrl: emptyToNull(newGift.imageUrl),
-      reserved: false,
-      reservedByName: null,
-      reservedByMe: false,
-    };
-    const updated = wishlists.map((w) =>
-      w.id === wishlistId ? { ...w, gifts: [...w.gifts, gift] } : w,
+  async function handleAddGift(newGift: NewGift) {
+    const added = await mutate(() =>
+      addGift(wishlistId, {
+        name: newGift.name,
+        description: emptyToNull(newGift.description),
+        price: parsePrice(newGift.price),
+        url: emptyToNull(newGift.url),
+        imageUrl: emptyToNull(newGift.imageUrl),
+      }),
     );
-    updateWishlists(updated);
-    setShowAddGift(false);
+    if (added) setShowAddGift(false);
   }
 
   if (!wishlist) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">Wishlist not found.</p>
-          <button
-            onClick={goBack}
-            className="mt-4 text-primary underline text-sm"
-          >
-            Go back
-          </button>
+          {status === "loading" ? (
+            <p className="text-muted-foreground">Loading…</p>
+          ) : (
+            <>
+              <p className="text-muted-foreground">
+                {status === "error"
+                  ? "Something went wrong loading this wishlist."
+                  : "Wishlist not found."}
+              </p>
+              <button
+                onClick={goBack}
+                className="mt-4 text-primary underline text-sm"
+              >
+                Go back
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
-  const claimedCount = wishlist.gifts.filter((g) => g.reserved).length;
+  // The backend hides reservations from the owner, so there is no count to show.
+  const claimedCount = isOwner
+    ? undefined
+    : wishlist.gifts.filter((g) => g.reserved).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -220,9 +220,24 @@ export default function Wishlist({ wishlistId, currentUserId }: WishlistViewProp
       {/* Add Gift Modal */}
       {showAddGift && (
         <AddGiftModal
-          onAdd={handleAddGift}
+          onAdd={(gift) => void handleAddGift(gift)}
           onClose={() => {
             setShowAddGift(false);
+          }}
+        />
+      )}
+
+      {/* Guest name dialog */}
+      {claimingGiftId && (
+        <GuestNameModal
+          initialName={storageHelper.load(
+            storageHelper.STORAGE_KEYS.guestName,
+            "",
+            z.string(),
+          )}
+          onConfirm={handleGuestClaim}
+          onClose={() => {
+            setClaimingGiftId(null);
           }}
         />
       )}

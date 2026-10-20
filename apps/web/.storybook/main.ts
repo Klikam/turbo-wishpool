@@ -69,7 +69,7 @@ const config: StorybookConfig = {
         };
       }) {
         new compiler.webpack.NormalModuleReplacementPlugin(
-          /^@\/actions\/(auth|getUserDetails)$/,
+          /^@\/actions\/(auth|getUserDetails|wishlists)$/,
           (resource: { request: string }) => {
             const name = resource.request.replace('@/actions/', '');
             resource.request = path.join(

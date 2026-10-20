@@ -1,0 +1,20 @@
+meta {
+  name: get wishlist
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}
+  body: none
+  auth: none
+}
+
+headers {
+  x-guest-token: {{guestToken}}
+  ~Authorization: Bearer {{accessToken}}
+}
+
+docs {
+  Optional viewer identity: `x-guest-token` (16-128 chars) or a Bearer access token (enable the disabled header).
+}

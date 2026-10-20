@@ -16,7 +16,8 @@ interface WishlistCardProps {
   title: string;
   date?: string;
   giftsCount: number;
-  claimedCount: number;
+  /** Omit when unknown, e.g. owners can't see reservations on their lists. */
+  claimedCount?: number;
   onOpen: () => void;
   onDelete: () => void;
 }
@@ -64,7 +65,8 @@ export function WishlistCard({
       </div>
       <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
-          {giftsCount} gifts · {claimedCount} claimed
+          {giftsCount} gifts
+          {claimedCount !== undefined && ` · ${claimedCount.toString()} claimed`}
         </span>
         <div className="flex items-center gap-1 text-xs text-[#C4797A] font-medium">
           View <ChevronRight className="w-3.5 h-3.5" />

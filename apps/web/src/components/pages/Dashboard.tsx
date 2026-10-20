@@ -1,30 +1,30 @@
 "use client";
 
-import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
-import { storageHelper } from "@/utils/storageHelper";
+import { OCCASION_LABELS, type WishlistSummary } from "@/types/wishlist";
 import { EmptyState, WishlistCard } from "@repo/ui";
 import { DashboardHeader } from "@/components/sections/DashboardHeader";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { logout as onLogout } from "@/actions/auth";
+import { deleteWishlist } from "@/actions/wishlists";
 import type { SessionUser } from "@/lib/session";
 
 interface DashboardProps {
   user: Pick<SessionUser, "id" | "name">;
+  wishlists: WishlistSummary[];
 }
 
-export default function Dashboard({ user }: DashboardProps) {
+export default function Dashboard({ user, wishlists: myLists }: DashboardProps) {
   const router = useRouter();
 
-  // TODO mock - remove it after integrating backend
-  const wishlists: Wishlist[] = [];
-
-  const myLists = wishlists.filter((w) => w.ownerId === user.id);
-
-  function deleteList(id: string) {
-    const updated = wishlists.filter((w) => w.id !== id);
-    storageHelper.save(storageHelper.STORAGE_KEYS.wishlists, updated);
-    window.location.reload();
+  async function deleteList(id: string) {
+    const result = await deleteWishlist(id);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    router.refresh();
   }
 
   async function handleLogout() {
@@ -77,25 +77,21 @@ export default function Dashboard({ user }: DashboardProps) {
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {myLists.map((list) => {
-              const claimed = list.gifts.filter((g) => g.reserved).length;
-              return (
-                <WishlistCard
-                  key={list.id}
-                  occasion={OCCASION_LABELS[list.occasion ?? "other"]}
-                  title={list.title}
-                  date={list.date ?? undefined}
-                  giftsCount={list.gifts.length}
-                  claimedCount={claimed}
-                  onOpen={() => {
-                    router.push(`/wishlist/${list.id}`);
-                  }}
-                  onDelete={() => {
-                    deleteList(list.id);
-                  }}
-                />
-              );
-            })}
+            {myLists.map((list) => (
+              <WishlistCard
+                key={list.id}
+                occasion={OCCASION_LABELS[list.occasion ?? "other"]}
+                title={list.title}
+                date={list.date ?? undefined}
+                giftsCount={list.giftsCount}
+                onOpen={() => {
+                  router.push(`/wishlist/${list.id}`);
+                }}
+                onDelete={() => {
+                  void deleteList(list.id);
+                }}
+              />
+            ))}
           </div>
         )}
       </main>

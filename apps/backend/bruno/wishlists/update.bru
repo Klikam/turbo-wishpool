@@ -1,0 +1,19 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "My updated birthday",
+    "occasion": "other",
+    "note": "Updated note"
+  }
+}

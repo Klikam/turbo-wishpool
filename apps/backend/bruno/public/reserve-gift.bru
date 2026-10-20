@@ -1,0 +1,22 @@
+meta {
+  name: reserve gift
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/reservation
+  body: json
+  auth: none
+}
+
+headers {
+  x-guest-token: {{guestToken}}
+  ~Authorization: Bearer {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Anna"
+  }
+}

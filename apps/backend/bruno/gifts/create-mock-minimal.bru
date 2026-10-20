@@ -1,0 +1,17 @@
+meta {
+  name: create mock - minimal (name only)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}/gifts
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Surprise me"
+  }
+}

@@ -1,17 +1,12 @@
 "use client";
 
-import {
-  OCCASION_LABELS,
-  type Occasion,
-  type Wishlist,
-  WishlistArraySchema,
-} from "@/types/wishlist";
+import { createWishlist } from "@/actions/wishlists";
+import { OCCASION_LABELS, type Occasion } from "@/types/wishlist";
 import { emptyToNull } from "@/utils/giftHelper";
-import { storageHelper } from "@/utils/storageHelper";
 import { BackButton, OccasionPicker, TextareaField, TextField } from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { SessionUser } from "@/lib/session";
+import { toast } from "sonner";
 
 const occasionLabels = Object.values(OCCASION_LABELS);
 
@@ -27,12 +22,9 @@ interface NewWishlist {
   description: string;
 }
 
-interface CreateWishlistProps {
-  user: Pick<SessionUser, "id" | "name">;
-}
-
-export default function CreateWishlist({ user: currentUser }: CreateWishlistProps) {
+export default function CreateWishlist() {
   const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState<NewWishlist>({
     title: "",
@@ -41,32 +33,24 @@ export default function CreateWishlist({ user: currentUser }: CreateWishlistProp
     description: "",
   });
 
-  function handleCreate() {
-    if (!form.title.trim()) return;
+  async function handleCreate() {
+    if (!form.title.trim() || submitting) return;
 
-    const wishlists = storageHelper.load<Wishlist[]>(
-      storageHelper.STORAGE_KEYS.wishlists,
-      [],
-      WishlistArraySchema,
-    );
-
-    const newList: Wishlist = {
-      id: storageHelper.genId(),
-      ownerId: currentUser.id,
-      ownerName: currentUser.name,
+    setSubmitting(true);
+    const result = await createWishlist({
       title: form.title.trim(),
       occasion: form.occasion,
       date: emptyToNull(form.date),
       note: emptyToNull(form.description),
-      gifts: [],
-    };
+    });
 
-    storageHelper.save(storageHelper.STORAGE_KEYS.wishlists, [
-      ...wishlists,
-      newList,
-    ]);
+    if (!result.ok) {
+      toast.error(result.error);
+      setSubmitting(false);
+      return;
+    }
 
-    router.push(`/wishlist/${newList.id}`);
+    router.push(`/wishlist/${result.data.id}`);
   }
 
   return (
@@ -124,8 +108,8 @@ export default function CreateWishlist({ user: currentUser }: CreateWishlistProp
           />
 
           <button
-            onClick={handleCreate}
-            disabled={!form.title.trim()}
+            onClick={() => void handleCreate()}
+            disabled={!form.title.trim() || submitting}
             className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-[#3a1232] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Create wishlist

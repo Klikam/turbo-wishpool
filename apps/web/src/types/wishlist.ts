@@ -27,16 +27,13 @@ export const OCCASION_LABELS: Record<Occasion, string> = {
 };
 
 /**
- * A wishlist as returned by `GET /public/wishlists/:id`.
- *
- * TODO mock - `ownerId` is not part of the API response. It only lets the
- * localStorage mock tell owner from guest; once the pages call the backend,
- * drop it and use the `isOwner` flag the API returns instead.
+ * A wishlist as returned by `GET /public/wishlists/:id`. `isOwner` is true
+ * when the request was made by the list's owner, who never sees reservations.
  */
-const WishlistSchema = z.object({
+export const WishlistSchema =z.object({
   id: z.string(),
-  ownerId: z.string(),
   ownerName: z.string(),
+  isOwner: z.boolean(),
   title: z.string(),
   occasion: OccasionSchema.nullable(),
   date: z.string().nullable(),
@@ -44,6 +41,18 @@ const WishlistSchema = z.object({
   gifts: z.array(GiftItemSchema),
 });
 
-export const WishlistArraySchema = z.array(WishlistSchema);
-
 export type Wishlist = z.infer<typeof WishlistSchema>;
+
+/**
+ * A wishlist as shown on the dashboard: `GET /wishlists` plus the number of
+ * gifts (from `GET /wishlists/:id`). Reservation counts aren't available to
+ * owners, by design.
+ */
+export interface WishlistSummary {
+  id: string;
+  title: string;
+  occasion: Occasion | null;
+  date: string | null;
+  note: string | null;
+  giftsCount: number;
+}

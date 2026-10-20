@@ -1,0 +1,11 @@
+meta {
+  name: remove
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}
+  body: none
+  auth: inherit
+}

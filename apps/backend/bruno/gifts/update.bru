@@ -1,0 +1,18 @@
+meta {
+  name: update
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}/gifts/{{giftId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Mechanical keyboard (updated)",
+    "price": 119.5
+  }
+}

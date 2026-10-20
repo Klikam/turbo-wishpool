@@ -1,0 +1,27 @@
+meta {
+  name: create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}/gifts
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Mechanical keyboard",
+    "description": "Brown switches, 75% layout",
+    "price": 129.99,
+    "url": "https://example.com/keyboard",
+    "imageUrl": "https://example.com/keyboard.jpg"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("giftId", res.body.id);
+  }
+}

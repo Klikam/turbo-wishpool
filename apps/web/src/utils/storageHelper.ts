@@ -1,11 +1,10 @@
 import z from 'zod';
 
+/** Per-browser conveniences only; wishlist data lives in the backend. */
 export const storageHelper = {
   STORAGE_KEYS: {
-    users: 'wishpool_users',
-    wishlists: 'wishpool_wishlists',
-    currentUser: 'wishpool_current_user',
     guestToken: 'wishpool_guest_token',
+    guestName: 'wishpool_guest_name',
   } as const,
 
   load<T>(key: string, fallback: T, schema: z.ZodType<T>): T {
@@ -24,17 +23,5 @@ export const storageHelper = {
   save(key: string, value: unknown) {
     if (typeof window === 'undefined') return;
     localStorage.setItem(key, JSON.stringify(value));
-  },
-
-  genId() {
-    return Math.random().toString(36).slice(2, 10);
-  },
-
-  hashToken(token: string): string {
-    let h = 0;
-    for (let i = 0; i < token.length; i++) {
-      h = (Math.imul(31, h) + token.charCodeAt(i)) | 0;
-    }
-    return Math.abs(h).toString(16);
   },
 };

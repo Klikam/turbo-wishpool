@@ -1,6 +1,6 @@
 import type { GiftItem } from '@/types/giftItem';
 import type { User } from '@/types/user';
-import type { Wishlist } from '@/types/wishlist';
+import type { Wishlist, WishlistSummary } from '@/types/wishlist';
 
 export const mockUser: User = {
   id: 'users-1',
@@ -54,8 +54,8 @@ export const mockGifts: GiftItem[] = [
 
 export const mockWishlist = (overrides: Partial<Wishlist> = {}): Wishlist => ({
   id: 'wishlists-1',
-  ownerId: mockUser.id,
   ownerName: mockUser.name,
+  isOwner: true,
   title: "Emma's 30th Birthday",
   occasion: 'birthday',
   date: '2026-11-14',
@@ -64,14 +64,25 @@ export const mockWishlist = (overrides: Partial<Wishlist> = {}): Wishlist => ({
   ...overrides,
 });
 
-export const mockWishlists: Wishlist[] = [
-  mockWishlist(),
-  mockWishlist({
+export const mockWishlistSummary = (
+  overrides: Partial<WishlistSummary> = {},
+): WishlistSummary => ({
+  id: 'wishlists-1',
+  title: "Emma's 30th Birthday",
+  occasion: 'birthday',
+  date: '2026-11-14',
+  note: null,
+  giftsCount: 3,
+  ...overrides,
+});
+
+export const mockWishlistSummaries: WishlistSummary[] = [
+  mockWishlistSummary(),
+  mockWishlistSummary({
     id: 'wishlists-2',
     title: 'Housewarming Party',
     occasion: 'housewarming',
     date: null,
-    note: null,
-    gifts: [],
+    giftsCount: 0,
   }),
 ];

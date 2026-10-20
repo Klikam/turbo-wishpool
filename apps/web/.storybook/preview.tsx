@@ -2,7 +2,6 @@ import type { Preview } from '@storybook/nextjs';
 import { Figtree, Playfair_Display } from 'next/font/google';
 import { mswLoader } from 'msw-storybook-addon/csf3';
 import '../src/app/globals.css';
-import { withMockData } from './decorators';
 
 const figtree = Figtree({
   subsets: ['latin'],
@@ -39,7 +38,6 @@ const preview: Preview = {
   loaders: [mswLoader()],
 
   decorators: [
-    withMockData,
     (Story) => (
       <div className={`${figtree.variable} ${playfairDisplay.variable}`}>
         <Story />

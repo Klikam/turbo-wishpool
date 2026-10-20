@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Figtree, Playfair_Display } from "next/font/google";
 
+import { Toaster } from "@/components/ui/sonner";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,6 +32,7 @@ export default function RootLayout({
     <html lang="en" className={`${figtree.variable} ${playfairDisplay.variable}`}>
       <body>
         {children}
+        <Toaster />
       </body>
     </html>
   );

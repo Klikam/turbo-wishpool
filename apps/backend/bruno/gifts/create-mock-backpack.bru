@@ -1,0 +1,21 @@
+meta {
+  name: create mock - backpack
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}/gifts
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Waterproof hiking backpack",
+    "description": "35L, grey",
+    "price": 89.9,
+    "url": "https://example.com/backpack",
+    "imageUrl": "https://example.com/backpack.jpg"
+  }
+}

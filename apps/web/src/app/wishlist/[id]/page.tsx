@@ -9,5 +9,5 @@ export default async function WishlistPage({
   const { id } = await params;
   const session = await getOptionalSession();
 
-  return <Wishlist wishlistId={id} currentUserId={session?.user.id ?? null} />;
+  return <Wishlist wishlistId={id} isSignedIn={session !== null} />;
 }

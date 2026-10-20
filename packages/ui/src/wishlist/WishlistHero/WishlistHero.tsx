@@ -6,7 +6,8 @@ interface WishlistHeroProps {
   description?: string;
   date?: string;
   giftsCount: number;
-  claimedCount: number;
+  /** Omit when unknown, e.g. owners can't see reservations on their lists. */
+  claimedCount?: number;
   isOwner: boolean;
 }
 
@@ -46,7 +47,9 @@ export function WishlistHero({
               </span>
             )}
             <span>
-              🎁 {giftsCount} gifts · {claimedCount} being gifted
+              🎁 {giftsCount} gifts
+              {claimedCount !== undefined &&
+                ` · ${claimedCount.toString()} being gifted`}
             </span>
             {!isOwner && (
               <span className="flex items-center gap-1">

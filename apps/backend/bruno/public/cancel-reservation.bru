@@ -1,0 +1,16 @@
+meta {
+  name: cancel reservation
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/reservation
+  body: none
+  auth: none
+}
+
+headers {
+  x-guest-token: {{guestToken}}
+  ~Authorization: Bearer {{accessToken}}
+}

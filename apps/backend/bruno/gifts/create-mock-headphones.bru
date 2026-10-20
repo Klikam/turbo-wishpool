@@ -1,0 +1,21 @@
+meta {
+  name: create mock - headphones
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}/gifts
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Noise-cancelling headphones",
+    "description": "Over-ear, wireless, 30h battery",
+    "price": 249.0,
+    "url": "https://example.com/headphones",
+    "imageUrl": "https://example.com/headphones.jpg"
+  }
+}
