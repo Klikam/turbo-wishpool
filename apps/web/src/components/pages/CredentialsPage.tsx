@@ -13,9 +13,12 @@ import { register as onRegister } from "@/lib/auth";
 
 export default function CredentialsPage() {
   const [mode, setMode] = useState<Mode>("signin");
+  const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
 
   const onSubmit: SubmitHandler<RegisterCredentials> = async (data) => {
+    setLoginError(null);
+
     if (mode === "register") {
       try {
         await onRegister(data);
@@ -35,7 +38,7 @@ export default function CredentialsPage() {
       router.push("/dashboard");
       router.refresh();
     } else {
-      console.log(response.error);
+      setLoginError(response.error);
     }
   };
 
@@ -57,6 +60,7 @@ export default function CredentialsPage() {
           mode={mode}
           handleModeChange={() => {
             setMode("signin");
+            setLoginError(null);
           }}
         />
         <CredentialsButton
@@ -64,6 +68,7 @@ export default function CredentialsPage() {
           mode={mode}
           handleModeChange={() => {
             setMode("register");
+            setLoginError(null);
           }}
         />
       </div>
@@ -107,6 +112,8 @@ export default function CredentialsPage() {
         {errors.password?.message && (
           <ToastError message={errors.password.message} />
         )}
+
+        {mode === "signin" && loginError && <ToastError message={loginError} />}
 
         <button
           type="submit"
