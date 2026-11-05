@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/sections/DashboardHeader";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { logout as onLogout } from "@/actions/auth";
+import { logout as onLogout } from "@/lib/auth";
 import { deleteWishlist } from "@/actions/wishlists";
 import type { SessionUser } from "@/lib/session";
 

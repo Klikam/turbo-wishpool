@@ -7,13 +7,3 @@ export function getBackendUrl() {
 
   return backendUrl;
 }
-
-export function getSessionSecret() {
-  const secret = process.env.SESSION_SECRET;
-
-  if (!secret) {
-    throw new Error("SESSION_SECRET is not defined");
-  }
-
-  return secret;
-}

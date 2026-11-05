@@ -3,7 +3,3 @@ export interface User {
   name: string | null;
   email: string;
 }
-
-export interface UserWithPassword extends User {
-  password: string;
-}

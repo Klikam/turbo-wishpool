@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ToastError } from './ToastError';
-import { NotImplementedAlert } from './NotImplementedAlert';
 
 const meta: Meta<typeof ToastError> = {
   title: 'UI/Auth/ToastError',
@@ -27,8 +26,4 @@ export const LongMessage: Story = {
     message:
       'Something went wrong with the request. Please check your details and try again.',
   },
-};
-
-export const NotImplemented: StoryObj<typeof NotImplementedAlert> = {
-  render: () => <NotImplementedAlert />,
 };
