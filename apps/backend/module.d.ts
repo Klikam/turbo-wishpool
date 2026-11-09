@@ -1,22 +1,17 @@
-import {
-  JwtPayload,
-  RefreshJwtPayload,
-} from './src/auth/interfaces/jwt-payload.interface';
-
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
       DATABASE_URL: string;
       PORT: string;
-      jwtSecretKey: string;
-      jwtRefreshTokenKey: string;
-    }
-  }
-
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-      refreshSession?: RefreshJwtPayload;
+      WEB_URL: string;
+      BETTER_AUTH_SECRET: string;
+      SMTP_HOST?: string;
+      SMTP_PORT?: string;
+      SMTP_USER?: string;
+      SMTP_PASS?: string;
+      MAIL_FROM?: string;
     }
   }
 }
+
+export {};

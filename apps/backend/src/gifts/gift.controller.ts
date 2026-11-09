@@ -9,63 +9,59 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Request,
-  UseGuards,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
-import { JwtGuard } from '../auth/guards/jwt.guard';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { GiftService } from './gift.service';
 import { CreateGiftDto } from './dto/create-gift.dto';
 import { UpdateGiftDto } from './dto/update-gift.dto';
 
-@UseGuards(JwtGuard)
 @Controller('wishlists/:wishlistId/gifts')
 export class GiftController {
   constructor(private readonly giftService: GiftService) {}
 
   @Post()
   async create(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
     @Body() dto: CreateGiftDto,
   ) {
-    return await this.giftService.create(req.user!.sub, wishlistId, dto);
+    return await this.giftService.create(userId, wishlistId, dto);
   }
 
   @Get()
   async findAll(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
   ) {
-    return await this.giftService.findAll(req.user!.sub, wishlistId);
+    return await this.giftService.findAll(userId, wishlistId);
   }
 
   @Get(':id')
   async findOne(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return await this.giftService.findOne(req.user!.sub, wishlistId, id);
+    return await this.giftService.findOne(userId, wishlistId, id);
   }
 
   @Patch(':id')
   async update(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateGiftDto,
   ) {
-    return await this.giftService.update(req.user!.sub, wishlistId, id, dto);
+    return await this.giftService.update(userId, wishlistId, id, dto);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async remove(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    await this.giftService.remove(req.user!.sub, wishlistId, id);
+    await this.giftService.remove(userId, wishlistId, id);
   }
 }

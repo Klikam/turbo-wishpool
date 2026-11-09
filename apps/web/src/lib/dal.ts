@@ -1,24 +1,41 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { cache } from "react";
-import { isAccessTokenExpired, refreshBackendTokens } from "@/lib/backend";
-import { getSession } from "@/lib/session";
+import { getBackendUrl } from "@/lib/config";
+import { SESSION_COOKIES, type SessionUser } from "@/lib/session";
+
+type BackendSession = {
+  user: { id: number | string; email: string; name: string };
+} | null;
 
 export const getOptionalSession = cache(async () => {
-  let session = await getSession();
+  const cookieStore = await cookies();
+  const token = SESSION_COOKIES.map((name) => cookieStore.get(name)?.value).find(
+    Boolean,
+  );
 
-  if (!session || session.error) return null;
+  if (!token) return null;
 
-  if (isAccessTokenExpired(session)) {
-    session = await refreshBackendTokens(session);
-    if (session.error) return null;
-  }
+  // The session token doubles as the bearer token for the backend API.
+  const response = await fetch(`${getBackendUrl()}/api/auth/get-session`, {
+    cache: "no-store",
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-  return {
-    user: session.user,
-    accessToken: session.backendTokens.accessToken,
+  if (!response.ok) return null;
+
+  const session = (await response.json()) as BackendSession;
+  if (!session) return null;
+
+  const user: SessionUser = {
+    id: String(session.user.id),
+    email: session.user.email,
+    name: session.user.name,
   };
+
+  return { user, accessToken: token };
 });
 
 export const verifySession = cache(async () => {

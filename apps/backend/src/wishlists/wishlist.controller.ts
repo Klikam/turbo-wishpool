@@ -9,53 +9,52 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Request,
-  UseGuards,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
-import { JwtGuard } from '../auth/guards/jwt.guard';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { WishlistService } from './wishlist.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 
-@UseGuards(JwtGuard)
 @Controller('wishlists')
 export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 
   @Post()
-  async create(@Request() req: ExpressRequest, @Body() dto: CreateWishlistDto) {
-    return await this.wishlistService.create(req.user!.sub, dto);
+  async create(
+    @CurrentUserId() userId: number,
+    @Body() dto: CreateWishlistDto,
+  ) {
+    return await this.wishlistService.create(userId, dto);
   }
 
   @Get()
-  async findAll(@Request() req: ExpressRequest) {
-    return await this.wishlistService.findAll(req.user!.sub);
+  async findAll(@CurrentUserId() userId: number) {
+    return await this.wishlistService.findAll(userId);
   }
 
   @Get(':id')
   async findOne(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return await this.wishlistService.findOne(req.user!.sub, id);
+    return await this.wishlistService.findOne(userId, id);
   }
 
   @Patch(':id')
   async update(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateWishlistDto,
   ) {
-    return await this.wishlistService.update(req.user!.sub, id, dto);
+    return await this.wishlistService.update(userId, id, dto);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async remove(
-    @Request() req: ExpressRequest,
+    @CurrentUserId() userId: number,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    await this.wishlistService.remove(req.user!.sub, id);
+    await this.wishlistService.remove(userId, id);
   }
 }

@@ -8,21 +8,25 @@ import {
   type RegisterCredentials,
 } from "@repo/types";
 import { CredentialsButton, CredentialsField, ToastError } from "@repo/ui";
-import { login as onLogin } from "@/actions/auth";
-import { register as onRegister } from "@/lib/auth";
+import { login as onLogin, register as onRegister } from "@/lib/auth";
 
 export default function CredentialsPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const router = useRouter();
 
   const onSubmit: SubmitHandler<RegisterCredentials> = async (data) => {
     setLoginError(null);
+    setNotice(null);
 
     if (mode === "register") {
       try {
         await onRegister(data);
         setMode("signin");
+        setNotice(
+          `Almost there! We sent a verification link to ${data.email}. Open it to finish creating your account.`,
+        );
       } catch (error) {
         console.log(
           error instanceof Error ? error.message : "Registration failed",
@@ -61,6 +65,7 @@ export default function CredentialsPage() {
           handleModeChange={() => {
             setMode("signin");
             setLoginError(null);
+            setNotice(null);
           }}
         />
         <CredentialsButton
@@ -69,6 +74,7 @@ export default function CredentialsPage() {
           handleModeChange={() => {
             setMode("register");
             setLoginError(null);
+            setNotice(null);
           }}
         />
       </div>
@@ -114,6 +120,15 @@ export default function CredentialsPage() {
         )}
 
         {mode === "signin" && loginError && <ToastError message={loginError} />}
+
+        {mode === "signin" && notice && (
+          <p
+            role="status"
+            className="text-xs text-foreground bg-secondary border border-border rounded-lg px-3 py-2"
+          >
+            {notice}
+          </p>
+        )}
 
         <button
           type="submit"

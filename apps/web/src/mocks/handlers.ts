@@ -1,32 +1,40 @@
 import { http, HttpResponse } from 'msw';
 /**
- * MSW handlers for auth REST endpoints, for use in Storybook stories.
- *
- * Only registration goes through the browser (via the `/backend` Next.js
- * proxy, see `lib/auth.ts`). Login/logout are server actions, mocked in
- * `actions/__mocks__/auth.ts` instead.
- *
- * The mock response shape mirrors the NestJS backend (`apps/backend/src/auth`).
+ * MSW handlers for the better-auth REST endpoints, for use in Storybook
+ * stories. The browser calls them on its own origin (`/api/auth/*`, proxied to
+ * the backend by Next.js, see `lib/auth-client.ts`).
  */
-const authUrl = (path: string) => `/backend/auth${path}`;
+const authUrl = (path: string) => `/api/auth${path}`;
 
 export const mockAuthUser = {
-  id: 1,
+  id: '1',
   email: 'emma@example.com',
   name: 'Emma Thornton',
 };
 
-export const signUpSuccess = http.post(authUrl('/register'), () =>
-  HttpResponse.json([mockAuthUser], { status: 201 }),
+export const signInSuccess = http.post(authUrl('/sign-in/email'), () =>
+  HttpResponse.json({ redirect: false, user: mockAuthUser }),
 );
 
-export const signUpEmailTaken = http.post(authUrl('/register'), () =>
+export const signInInvalidCredentials = http.post(
+  authUrl('/sign-in/email'),
+  () =>
+    HttpResponse.json(
+      { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' },
+      { status: 401 },
+    ),
+);
+
+export const signUpSuccess = http.post(authUrl('/sign-up/email'), () =>
+  HttpResponse.json({ token: null, user: mockAuthUser }),
+);
+
+export const signUpEmailTaken = http.post(authUrl('/sign-up/email'), () =>
   HttpResponse.json(
     {
-      message: `User with email ${mockAuthUser.email} already existed.`,
-      error: 'Conflict',
-      statusCode: 409,
+      code: 'USER_ALREADY_EXISTS',
+      message: 'User already exists. Use another email.',
     },
-    { status: 409 },
+    { status: 422 },
   ),
 );
