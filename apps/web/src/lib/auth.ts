@@ -47,6 +47,22 @@ export async function login(
   return { ok: false, error: "Invalid credentials" };
 }
 
+export type SocialProvider = "google" | "facebook";
+
+/**
+ * Sends the browser to the provider's consent screen. On success the user
+ * comes back signed in on /dashboard; on failure, on / with `?error=`.
+ */
+export async function socialSignIn(provider: SocialProvider) {
+  const { error } = await authClient.signIn.social({
+    provider,
+    callbackURL: VERIFIED_CALLBACK_URL,
+    errorCallbackURL: "/",
+  });
+
+  if (error) throw new Error(error.message ?? "Sign-in failed");
+}
+
 export async function logout() {
   await authClient.signOut();
 }

@@ -17,6 +17,16 @@ export interface AuthConfig {
   webUrl: string;
   secret: string;
   sendVerificationEmail: (email: { to: string; url: string }) => void;
+  /** Only providers with credentials configured are offered. */
+  socialProviders: {
+    google?: OAuthCredentials;
+    facebook?: OAuthCredentials;
+  };
+}
+
+export interface OAuthCredentials {
+  clientId: string;
+  clientSecret: string;
 }
 
 export function createAuth(db: Database, config: AuthConfig) {
@@ -63,6 +73,19 @@ export function createAuth(db: Database, config: AuthConfig) {
         config.sendVerificationEmail({ to: user.email, url });
         return Promise.resolve();
       },
+    },
+    // Redirect URIs to register with each provider:
+    // `${webUrl}/api/auth/callback/google` and `.../callback/facebook`.
+    // A social sign-in with the email of an existing account links to it
+    // only when the provider has verified that email (Google does, Facebook
+    // doesn't), so nobody can take over an account through Facebook.
+    socialProviders: {
+      ...(config.socialProviders.google && {
+        google: { ...config.socialProviders.google, prompt: 'select_account' },
+      }),
+      ...(config.socialProviders.facebook && {
+        facebook: config.socialProviders.facebook,
+      }),
     },
     // Lets server-side calls from the web app authenticate with
     // `Authorization: Bearer <session token>`.

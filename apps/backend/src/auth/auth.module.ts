@@ -8,7 +8,7 @@ import {
 } from '../drizzle/drizzle.provider';
 import { MailModule } from '../mail/mail.module';
 import { MailService } from '../mail/mail.service';
-import { createAuth } from './auth.config';
+import { createAuth, type OAuthCredentials } from './auth.config';
 
 @Module({
   imports: [
@@ -25,9 +25,22 @@ import { createAuth } from './auth.config';
             }),
           webUrl: config.getOrThrow<string>('WEB_URL'),
           secret: config.getOrThrow<string>('BETTER_AUTH_SECRET'),
+          socialProviders: {
+            google: oauthCredentials(config, 'GOOGLE'),
+            facebook: oauthCredentials(config, 'FACEBOOK'),
+          },
         }),
       }),
     }),
   ],
 })
 export class AuthModule {}
+
+function oauthCredentials(
+  config: ConfigService,
+  prefix: string,
+): OAuthCredentials | undefined {
+  const clientId = config.get<string>(`${prefix}_CLIENT_ID`);
+  const clientSecret = config.get<string>(`${prefix}_CLIENT_SECRET`);
+  return clientId && clientSecret ? { clientId, clientSecret } : undefined;
+}
