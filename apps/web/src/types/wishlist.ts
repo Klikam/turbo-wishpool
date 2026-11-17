@@ -44,9 +44,8 @@ export const WishlistSchema =z.object({
 export type Wishlist = z.infer<typeof WishlistSchema>;
 
 /**
- * A wishlist as shown on the dashboard: `GET /wishlists` plus the number of
- * gifts (from `GET /wishlists/:id`). Reservation counts aren't available to
- * owners, by design.
+ * A wishlist as shown on the dashboard, from `GET /wishlists`. Reservation
+ * counts aren't available to owners, by design.
  */
 export interface WishlistSummary {
   id: string;

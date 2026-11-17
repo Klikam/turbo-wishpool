@@ -24,21 +24,16 @@ export interface NewGiftInput {
 export async function getMyWishlists(): Promise<WishlistSummary[]> {
   const { accessToken } = await verifySession();
 
-  const wishlists = await api<Omit<WishlistSummary, "giftsCount">[]>(
-    "wishlists",
-    accessToken,
-  );
+  const wishlists = await api<WishlistSummary[]>("wishlists", accessToken);
 
-  // The list endpoint doesn't include gifts, so count them per wishlist.
-  return Promise.all(
-    wishlists.map(async ({ id, title, occasion, date, note }) => {
-      const { gifts } = await api<{ gifts: unknown[] }>(
-        `wishlists/${id}`,
-        accessToken,
-      );
-      return { id, title, occasion, date, note, giftsCount: gifts.length };
-    }),
-  );
+  return wishlists.map(({ id, title, occasion, date, note, giftsCount }) => ({
+    id,
+    title,
+    occasion,
+    date,
+    note,
+    giftsCount,
+  }));
 }
 
 export async function createWishlist(input: NewWishlistInput) {

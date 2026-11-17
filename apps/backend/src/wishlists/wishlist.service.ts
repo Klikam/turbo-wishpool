@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, getColumns } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, wishlistsTable } from '../db/schema';
@@ -25,9 +25,14 @@ export class WishlistService {
 
   async findAll(userId: number) {
     return this.db
-      .select()
+      .select({
+        ...getColumns(wishlistsTable),
+        giftsCount: count(giftsTable.id),
+      })
       .from(wishlistsTable)
+      .leftJoin(giftsTable, eq(giftsTable.wishlistId, wishlistsTable.id))
       .where(eq(wishlistsTable.userId, userId))
+      .groupBy(wishlistsTable.id)
       .orderBy(desc(wishlistsTable.date));
   }
 
