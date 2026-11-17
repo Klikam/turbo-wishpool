@@ -114,7 +114,7 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
 
   if (!wishlist) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex-1 bg-background flex items-center justify-center">
         <div className="text-center">
           {status === "loading" ? (
             <p className="text-muted-foreground">Loading…</p>
@@ -144,7 +144,7 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
     : wishlist.gifts.filter((g) => g.reserved).length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">

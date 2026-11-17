@@ -8,7 +8,7 @@ import Dashboard from './Dashboard';
 
 /**
  * Dashboard receives the signed-in user and the owner's wishlists from its
- * server component (`app/dashboard/page.tsx` redirects to `/` when there's no
+ * server component (`app/(app)/dashboard/page.tsx` redirects to `/` when there's no
  * session), so stories pass both as args.
  */
 const meta: Meta<typeof Dashboard> = {

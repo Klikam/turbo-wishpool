@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${figtree.variable} ${playfairDisplay.variable}`}>
-      <body>
+      <body className="min-h-screen flex flex-col bg-background">
         {children}
         <Toaster />
       </body>

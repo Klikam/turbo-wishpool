@@ -36,7 +36,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex-1 bg-background">
       <DashboardHeader
         userName={user.name}
         onLogout={() => void handleLogout()}
