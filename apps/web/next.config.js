@@ -1,3 +1,11 @@
+import process from "node:process";
+
+const backendUrl = process.env.BACKEND_URL;
+
+if (!backendUrl) {
+  throw new Error("BACKEND_URL is not defined");
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
@@ -8,11 +16,7 @@ const nextConfig = {
       // the session cookie belongs to that domain.
       {
         source: "/api/auth/:path*",
-        destination: "http://localhost:3001/api/auth/:path*",
-      },
-      {
-        source: "/backend/:path*",
-        destination: "http://localhost:3001/:path*",
+        destination: `${backendUrl}/api/auth/:path*`,
       },
     ];
   },
