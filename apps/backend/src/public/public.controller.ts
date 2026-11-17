@@ -9,7 +9,9 @@ import {
   Param,
   ParseUUIDPipe,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { OptionalAuth } from '@thallesp/nestjs-better-auth';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { PublicService } from './public.service';
@@ -31,6 +33,7 @@ export class PublicController {
     return await this.publicService.getWishlist(wishlistId, viewer);
   }
 
+  @UseGuards(ThrottlerGuard)
   @Put('gifts/:id/reservation')
   async reserve(
     @CurrentUserId() userId: number | undefined,
@@ -43,6 +46,7 @@ export class PublicController {
     return await this.publicService.reserve(wishlistId, id, viewer, dto.name);
   }
 
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('gifts/:id/reservation')
   async cancelReservation(

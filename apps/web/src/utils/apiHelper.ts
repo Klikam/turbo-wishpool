@@ -1,4 +1,7 @@
+import { headers as requestHeaders } from "next/headers";
 import { getBackendUrl } from "@/lib/config";
+
+const TOO_MANY_REQUESTS = 429;
 
 export class ApiError extends Error {
   constructor(
@@ -37,16 +40,28 @@ export async function api<T>(
   accessToken: string | null,
   { method = "GET", body, headers }: ApiOptions = {},
 ): Promise<T> {
+  // Passes on the visitor's address, so the backend can tell visitors apart
+  // (e.g. to rate-limit reservations) instead of seeing only this server.
+  const forwardedFor = (await requestHeaders()).get("x-forwarded-for");
+
   const response = await fetch(`${getBackendUrl()}/${path}`, {
     method,
     cache: "no-store",
     headers: {
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
       ...headers,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+
+  if (response.status === TOO_MANY_REQUESTS) {
+    throw new ApiError(
+      response.status,
+      "Too many attempts, try again in a minute",
+    );
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, await readErrorMessage(response));
