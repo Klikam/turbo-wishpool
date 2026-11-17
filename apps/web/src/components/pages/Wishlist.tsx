@@ -239,7 +239,11 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
                 key={gift.id}
                 name={gift.name}
                 description={gift.description ?? undefined}
-                price={gift.price === null ? undefined : formatPrice(gift.price)}
+                price={
+                  gift.price === null
+                    ? undefined
+                    : formatPrice(gift.price, wishlist.currency)
+                }
                 url={gift.url ?? undefined}
                 imageUrl={gift.imageUrl ?? undefined}
                 claimed={gift.reserved}
@@ -264,6 +268,7 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
       {/* Add Gift Modal */}
       {showAddGift && (
         <AddGiftModal
+          currency={wishlist.currency}
           onAdd={(gift) => void handleAddGift(gift)}
           onClose={() => {
             setShowAddGift(false);

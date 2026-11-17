@@ -5,6 +5,7 @@ export * from "./src/auth/SocialButton";
 
 export * from "./src/common/BackButton";
 export * from "./src/common/EmptyState";
+export * from "./src/common/SelectField";
 export * from "./src/common/TextField";
 export * from "./src/common/TextareaField";
 

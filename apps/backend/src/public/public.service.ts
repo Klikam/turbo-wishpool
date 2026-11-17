@@ -84,6 +84,7 @@ export class PublicService {
         occasion: wishlistsTable.occasion,
         date: wishlistsTable.date,
         note: wishlistsTable.note,
+        currency: wishlistsTable.currency,
         ownerName: usersTable.name,
         ownerId: wishlistsTable.userId,
       })

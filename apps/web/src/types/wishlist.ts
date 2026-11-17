@@ -38,6 +38,8 @@ export const WishlistSchema =z.object({
   occasion: OccasionSchema.nullable(),
   date: z.string().nullable(),
   note: z.string().nullable(),
+  /** ISO 4217 code the gift prices are in. */
+  currency: z.string(),
   gifts: z.array(GiftItemSchema),
 });
 

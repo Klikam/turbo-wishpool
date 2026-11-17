@@ -4,6 +4,7 @@ import CreateWishlist from './CreateWishlist';
 const meta: Meta<typeof CreateWishlist> = {
   title: 'Pages/CreateWishlist',
   component: CreateWishlist,
+  args: { defaultCurrency: 'EUR' },
 };
 
 export default meta;

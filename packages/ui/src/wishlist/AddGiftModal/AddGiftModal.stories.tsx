@@ -6,6 +6,7 @@ const meta: Meta<typeof AddGiftModal> = {
   component: AddGiftModal,
   parameters: { layout: "fullscreen" },
   args: {
+    currency: "EUR",
     onAdd: () => {},
     onClose: () => {},
   },

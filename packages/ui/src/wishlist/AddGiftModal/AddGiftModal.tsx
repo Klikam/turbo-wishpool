@@ -13,6 +13,8 @@ export interface NewGift {
 }
 
 interface AddGiftModalProps {
+  /** ISO 4217 code of the wishlist's prices, e.g. "PLN". */
+  currency: string;
   onAdd: (gift: NewGift) => void;
   onClose: () => void;
 }
@@ -25,7 +27,7 @@ const emptyGift: NewGift = {
   imageUrl: "",
 };
 
-export function AddGiftModal({ onAdd, onClose }: AddGiftModalProps) {
+export function AddGiftModal({ currency, onAdd, onClose }: AddGiftModalProps) {
   const [newGift, setNewGift] = useState<NewGift>(emptyGift);
 
   function handleAdd() {
@@ -72,8 +74,8 @@ export function AddGiftModal({ onAdd, onClose }: AddGiftModalProps) {
           />
           <div className="grid grid-cols-2 gap-3">
             <TextField
-              label="Price"
-              placeholder="€ 49.90"
+              label={`Price (${currency})`}
+              placeholder="49.90"
               value={newGift.price}
               onChange={(price) => {
                 setNewGift({ ...newGift, price });

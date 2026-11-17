@@ -1,6 +1,11 @@
-/** Display string for a gift price, e.g. 149 -> "€ 149.00". */
-export function formatPrice(price: number): string {
-  return `€ ${price.toFixed(2)}`;
+/**
+ * Display string for a gift price in the wishlist's currency, laid out the
+ * viewer's way: 1299 PLN is "1 299,00 zł" in Polish, "PLN 1,299.00" in English.
+ */
+export function formatPrice(price: number, currency: string): string {
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(
+    price,
+  );
 }
 
 /**

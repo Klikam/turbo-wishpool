@@ -2,13 +2,25 @@
 
 import { createWishlist } from "@/actions/wishlists";
 import { OCCASION_LABELS, type Occasion } from "@/types/wishlist";
+import { CURRENCIES, currencyLabel } from "@/utils/currency";
 import { emptyToNull } from "@/utils/giftHelper";
-import { BackButton, OccasionPicker, TextareaField, TextField } from "@repo/ui";
+import {
+  BackButton,
+  OccasionPicker,
+  SelectField,
+  TextareaField,
+  TextField,
+} from "@repo/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const occasionLabels = Object.values(OCCASION_LABELS);
+
+const currencyOptions = CURRENCIES.map((code) => ({
+  value: code,
+  label: currencyLabel(code),
+}));
 
 function occasionFromLabel(label: string): Occasion {
   const entry = Object.entries(OCCASION_LABELS).find(([, l]) => l === label);
@@ -20,9 +32,17 @@ interface NewWishlist {
   occasion: Occasion;
   date: string;
   description: string;
+  currency: string;
 }
 
-export default function CreateWishlist() {
+interface CreateWishlistProps {
+  /** Pre-selected currency, guessed from the owner's language. */
+  defaultCurrency: string;
+}
+
+export default function CreateWishlist({
+  defaultCurrency,
+}: CreateWishlistProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,6 +51,7 @@ export default function CreateWishlist() {
     occasion: "birthday",
     date: "",
     description: "",
+    currency: defaultCurrency,
   });
 
   async function handleCreate() {
@@ -42,6 +63,7 @@ export default function CreateWishlist() {
       occasion: form.occasion,
       date: emptyToNull(form.date),
       note: emptyToNull(form.description),
+      currency: form.currency,
     });
 
     if (!result.ok) {
@@ -95,6 +117,15 @@ export default function CreateWishlist() {
             value={form.date}
             onChange={(date) => {
               setForm({ ...form, date });
+            }}
+          />
+
+          <SelectField
+            label="Currency of gift prices"
+            value={form.currency}
+            options={currencyOptions}
+            onChange={(currency) => {
+              setForm({ ...form, currency });
             }}
           />
 

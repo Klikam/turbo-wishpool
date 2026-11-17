@@ -1,0 +1,1 @@
+ALTER TABLE "wishlists" ADD COLUMN "currency" varchar(3) DEFAULT 'EUR' NOT NULL;

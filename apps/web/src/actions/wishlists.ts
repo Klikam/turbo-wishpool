@@ -10,6 +10,7 @@ export interface NewWishlistInput {
   occasion: Occasion;
   date: string | null;
   note: string | null;
+  currency: string;
 }
 
 export interface NewGiftInput {
@@ -47,6 +48,7 @@ export async function createWishlist(input: NewWishlistInput) {
         occasion: input.occasion,
         date: input.date ?? undefined,
         note: input.note ?? undefined,
+        currency: input.currency,
       },
     }),
   );

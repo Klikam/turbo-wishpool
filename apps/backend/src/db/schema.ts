@@ -97,6 +97,8 @@ export const wishlistsTable = pgTable.withRLS(
     occasion: occasionEnum(),
     date: date(),
     note: text(),
+    // ISO 4217 code that the list's gift prices are in.
+    currency: varchar({ length: 3 }).notNull().default('EUR'),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index().on(table.userId)],
