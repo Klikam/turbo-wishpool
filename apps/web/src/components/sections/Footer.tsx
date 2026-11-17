@@ -12,15 +12,24 @@ function PolishFlag() {
   );
 }
 
+const linkClassName =
+  "font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline transition-colors";
+
 export function Footer() {
   return (
     <footer className="px-4 sm:px-6 py-6 text-center text-xs text-muted-foreground">
       Made in Poland <PolishFlag /> by{" "}
-      <a
-        href="mailto:contact@klikam.org"
-        className="font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline transition-colors"
-      >
+      <a href="mailto:contact@klikam.org" className={linkClassName}>
         Klikam
+      </a>
+      <span aria-hidden="true" className="mx-2">
+        ·
+      </span>
+      <a
+        href="mailto:contact@klikam.org?subject=Wishpool%20bug%20report"
+        className={linkClassName}
+      >
+        Report a bug
       </a>
     </footer>
   );
