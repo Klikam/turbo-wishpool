@@ -11,7 +11,9 @@ async function bootstrap() {
     { bodyParser: false },
   );
 
-  app.set('trust proxy', 'loopback');
+  // Which proxies may set X-Forwarded-For, i.e. where `req.ip` (used for rate
+  // limiting) comes from. See TRUST_PROXY in .env.example.
+  app.set('trust proxy', trustProxy(process.env.TRUST_PROXY));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -23,4 +25,13 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3001);
 }
+
+/** Express's `trust proxy` setting from its env var form. */
+function trustProxy(value = 'loopback'): boolean | number | string {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (/^\d+$/.test(value)) return Number(value);
+  return value;
+}
+
 void bootstrap();
