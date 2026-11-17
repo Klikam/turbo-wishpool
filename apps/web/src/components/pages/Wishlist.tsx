@@ -8,8 +8,10 @@ import {
   getPublicWishlist,
   reserveGift,
 } from "@/actions/wishlists";
+import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
 import { SignInModal } from "@/components/sections/SignInModal";
 import { useGuestToken } from "@/hooks/useGuestToken";
+import type { GiftItem } from "@/types/giftItem";
 import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import type { ActionResult } from "@/utils/actionResult";
 import { emptyToNull, formatPrice, parsePrice } from "@/utils/giftHelper";
@@ -47,6 +49,9 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
   // Gift a guest is about to reserve, while the name dialog is open.
   const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
+  // Kept after the dialog closes so its text doesn't change while it fades out.
+  const [giftToDelete, setGiftToDelete] = useState<GiftItem | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const isOwner = wishlist?.isOwner ?? false;
 
@@ -236,7 +241,8 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
                   handleUnclaim(gift.id);
                 }}
                 onDelete={() => {
-                  handleDelete(gift.id);
+                  setGiftToDelete(gift);
+                  setConfirmingDelete(true);
                 }}
               />
             ))}
@@ -253,6 +259,18 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
           }}
         />
       )}
+
+      <ConfirmDeleteDialog
+        open={confirmingDelete}
+        title={`Delete “${giftToDelete?.name ?? ""}”?`}
+        description="The gift will be removed from your wishlist for good."
+        onConfirm={() => {
+          if (giftToDelete) handleDelete(giftToDelete.id);
+        }}
+        onClose={() => {
+          setConfirmingDelete(false);
+        }}
+      />
 
       {/* Guest name dialog */}
       {claimingGiftId && (

@@ -80,6 +80,8 @@ export function GiftCard({
         {isOwner && (
           <button
             onClick={onDelete}
+            aria-label={`Delete ${name}`}
+            title="Delete gift"
             className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shadow"
           >
             <Trash2 className="w-3.5 h-3.5" />

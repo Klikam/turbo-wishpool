@@ -2,9 +2,11 @@
 
 import { OCCASION_LABELS, type WishlistSummary } from "@/types/wishlist";
 import { EmptyState, WishlistCard } from "@repo/ui";
+import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
 import { DashboardHeader } from "@/components/sections/DashboardHeader";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import { logout as onLogout } from "@/lib/auth";
 import { deleteWishlist } from "@/actions/wishlists";
@@ -17,6 +19,11 @@ interface DashboardProps {
 
 export default function Dashboard({ user, wishlists: myLists }: DashboardProps) {
   const router = useRouter();
+  // Kept after the dialog closes so its text doesn't change while it fades out.
+  const [listToDelete, setListToDelete] = useState<WishlistSummary | null>(
+    null,
+  );
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   async function deleteList(id: string) {
     const result = await deleteWishlist(id);
@@ -88,13 +95,26 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
                   router.push(`/wishlist/${list.id}`);
                 }}
                 onDelete={() => {
-                  void deleteList(list.id);
+                  setListToDelete(list);
+                  setConfirmingDelete(true);
                 }}
               />
             ))}
           </div>
         )}
       </main>
+
+      <ConfirmDeleteDialog
+        open={confirmingDelete}
+        title={`Delete “${listToDelete?.title ?? ""}”?`}
+        description="The wishlist and all its gifts will be deleted for good, and its share link will stop working."
+        onConfirm={() => {
+          if (listToDelete) void deleteList(listToDelete.id);
+        }}
+        onClose={() => {
+          setConfirmingDelete(false);
+        }}
+      />
     </div>
   );
 }

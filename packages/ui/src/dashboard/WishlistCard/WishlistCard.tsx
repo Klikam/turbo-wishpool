@@ -43,7 +43,11 @@ export function WishlistCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+          aria-label={`Delete ${title}`}
+          title="Delete wishlist"
+          // Hidden until hover only where hovering is possible; touch
+          // screens always show it.
+          className="pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100 text-muted-foreground hover:text-destructive transition-all"
         >
           <Trash2 className="w-4 h-4" />
         </button>
