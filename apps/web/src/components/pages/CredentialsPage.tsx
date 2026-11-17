@@ -8,9 +8,20 @@ import {
   type RegisterCredentials,
 } from "@repo/types";
 import { CredentialsButton, CredentialsField, ToastError } from "@repo/ui";
-import { login as onLogin, register as onRegister } from "@/lib/auth";
+import {
+  DEFAULT_CALLBACK_URL,
+  login as onLogin,
+  register as onRegister,
+} from "@/lib/auth";
 
-export default function CredentialsPage() {
+interface CredentialsPageProps {
+  /** Where to go once signed in (also used by the verification email). */
+  callbackURL?: string;
+}
+
+export default function CredentialsPage({
+  callbackURL = DEFAULT_CALLBACK_URL,
+}: CredentialsPageProps) {
   const [mode, setMode] = useState<Mode>("signin");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -22,7 +33,7 @@ export default function CredentialsPage() {
 
     if (mode === "register") {
       try {
-        await onRegister(data);
+        await onRegister(data, callbackURL);
         setMode("signin");
         setNotice(
           `Almost there! We sent a verification link to ${data.email}. Open it to finish creating your account.`,
@@ -35,11 +46,11 @@ export default function CredentialsPage() {
       return;
     }
 
-    const response = await onLogin(data);
+    const response = await onLogin(data, callbackURL);
 
     if (response.ok) {
       console.log(`Logged in as ${data.email}`);
-      router.push("/dashboard");
+      router.push(callbackURL);
       router.refresh();
     } else {
       setLoginError(response.error);

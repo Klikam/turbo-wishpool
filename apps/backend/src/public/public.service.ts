@@ -7,7 +7,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, notInArray } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
@@ -34,15 +34,45 @@ export class PublicService {
     if (userId !== undefined) return { userId };
     if (!guestToken) return null;
 
-    if (
-      guestToken.length < MIN_GUEST_TOKEN_LENGTH ||
-      guestToken.length > MAX_GUEST_TOKEN_LENGTH
-    )
-      throw new BadRequestException('Invalid guest token');
+    return { guestTokenHash: this.hashGuestToken(guestToken) };
+  }
 
-    return {
-      guestTokenHash: createHash('sha256').update(guestToken).digest('hex'),
-    };
+  /**
+   * Moves the reservations made in this browser as a guest onto the account
+   * that just signed in, so they show as `reservedByMe` and can be undone.
+   * Reservations on the user's own wishlists stay as they were: owners can't
+   * reserve their own gifts.
+   */
+  async adoptGuestReservations(userId: number, guestToken: string) {
+    const guestTokenHash = this.hashGuestToken(guestToken);
+
+    const [user] = await this.db
+      .select({ name: usersTable.name })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    if (!user) throw new UnauthorizedException();
+
+    const ownWishlists = this.db
+      .select({ id: wishlistsTable.id })
+      .from(wishlistsTable)
+      .where(eq(wishlistsTable.userId, userId));
+
+    const adopted = await this.db
+      .update(giftsTable)
+      .set({
+        reservedByUserId: userId,
+        reservedByName: user.name,
+        reservedByGuestTokenHash: null,
+      })
+      .where(
+        and(
+          eq(giftsTable.reservedByGuestTokenHash, guestTokenHash),
+          notInArray(giftsTable.wishlistId, ownWishlists),
+        ),
+      )
+      .returning({ id: giftsTable.id });
+
+    return { adopted: adopted.length };
   }
 
   async getWishlist(wishlistId: string, viewer: Viewer) {
@@ -188,6 +218,16 @@ export class PublicService {
       );
 
     if (!gift) throw new NotFoundException('Gift not found');
+  }
+
+  private hashGuestToken(guestToken: string) {
+    if (
+      guestToken.length < MIN_GUEST_TOKEN_LENGTH ||
+      guestToken.length > MAX_GUEST_TOKEN_LENGTH
+    )
+      throw new BadRequestException('Invalid guest token');
+
+    return createHash('sha256').update(guestToken).digest('hex');
   }
 
   private withoutReservation(gift: GiftRow): GiftRow {

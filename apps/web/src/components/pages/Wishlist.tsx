@@ -2,11 +2,13 @@
 
 import {
   addGift,
+  adoptGuestReservations,
   cancelReservation,
   deleteGift,
   getPublicWishlist,
   reserveGift,
 } from "@/actions/wishlists";
+import { SignInModal } from "@/components/sections/SignInModal";
 import { useGuestToken } from "@/hooks/useGuestToken";
 import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import type { ActionResult } from "@/utils/actionResult";
@@ -22,7 +24,7 @@ import {
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
-import { Plus, ShoppingBag } from "lucide-react";
+import { LogIn, Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +46,7 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
   const [showAddGift, setShowAddGift] = useState(false);
   // Gift a guest is about to reserve, while the name dialog is open.
   const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const isOwner = wishlist?.isOwner ?? false;
 
@@ -60,8 +63,21 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
 
   useEffect(() => {
     // The guest token is only known after mount.
-    if (guestToken) void load();
-  }, [guestToken, load]);
+    if (!guestToken) return;
+
+    void (async () => {
+      // Claims made before signing in (e.g. via the sign-in dialog here)
+      // become the account's, so they still show as "You're gifting this".
+      if (isSignedIn) {
+        try {
+          await adoptGuestReservations(guestToken);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      await load();
+    })();
+  }, [guestToken, isSignedIn, load]);
 
   function goBack() {
     router.push(isSignedIn ? "/dashboard" : "/");
@@ -153,6 +169,17 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
             <ShareLinkButton
               url={`${typeof window === "undefined" ? "" : window.location.origin}/wishlist/${wishlistId}`}
             />
+            {!isSignedIn && (
+              <button
+                onClick={() => {
+                  setShowSignIn(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-[#3a1232] transition-colors"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign in
+              </button>
+            )}
             {isOwner && (
               <button
                 onClick={() => {
@@ -238,6 +265,19 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
           onConfirm={handleGuestClaim}
           onClose={() => {
             setClaimingGiftId(null);
+          }}
+          onSignIn={() => {
+            setClaimingGiftId(null);
+            setShowSignIn(true);
+          }}
+        />
+      )}
+
+      {showSignIn && (
+        <SignInModal
+          callbackURL={`/wishlist/${wishlistId}`}
+          onClose={() => {
+            setShowSignIn(false);
           }}
         />
       )}

@@ -140,6 +140,21 @@ export async function reserveGift(
   );
 }
 
+/**
+ * After signing in, takes over the reservations this browser made as a guest
+ * so the user can still see and undo them. A no-op without a session.
+ */
+export async function adoptGuestReservations(guestToken: string) {
+  const session = await getOptionalSession();
+  if (!session) return;
+
+  await api<{ adopted: number }>(
+    "public/guest-reservations/adopt",
+    session.accessToken,
+    { method: "POST", headers: { "x-guest-token": guestToken } },
+  );
+}
+
 export async function cancelReservation(
   wishlistId: string,
   giftId: string,

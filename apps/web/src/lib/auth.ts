@@ -6,16 +6,20 @@ type LoginResult = { ok: true } | { ok: false; error: string };
 const FORBIDDEN = 403;
 const TOO_MANY_REQUESTS = 429;
 
-// Where the link in the verification email sends the user, signed in.
-const VERIFIED_CALLBACK_URL = "/dashboard";
+// Where the user lands signed in, unless a caller asks for somewhere else
+// (e.g. back to a shared wishlist). Also the target of the verification email.
+export const DEFAULT_CALLBACK_URL = "/dashboard";
 
 /** Creates the account and emails a verification link; nobody is signed in yet. */
-export const register = async (credentials: RegisterCredentials) => {
+export const register = async (
+  credentials: RegisterCredentials,
+  callbackURL = DEFAULT_CALLBACK_URL,
+) => {
   const { error } = await authClient.signUp.email({
     name: credentials.name,
     email: credentials.email,
     password: credentials.password,
-    callbackURL: VERIFIED_CALLBACK_URL,
+    callbackURL,
   });
 
   if (error) throw new Error(error.message ?? "Registration failed");
@@ -23,11 +27,12 @@ export const register = async (credentials: RegisterCredentials) => {
 
 export async function login(
   credentials: SignInCredentials,
+  callbackURL = DEFAULT_CALLBACK_URL,
 ): Promise<LoginResult> {
   const { error } = await authClient.signIn.email({
     email: credentials.email,
     password: credentials.password,
-    callbackURL: VERIFIED_CALLBACK_URL,
+    callbackURL,
   });
 
   if (!error) return { ok: true };
@@ -51,12 +56,15 @@ export type SocialProvider = "google" | "facebook";
 
 /**
  * Sends the browser to the provider's consent screen. On success the user
- * comes back signed in on /dashboard; on failure, on / with `?error=`.
+ * comes back signed in on `callbackURL`; on failure, on / with `?error=`.
  */
-export async function socialSignIn(provider: SocialProvider) {
+export async function socialSignIn(
+  provider: SocialProvider,
+  callbackURL = DEFAULT_CALLBACK_URL,
+) {
   const { error } = await authClient.signIn.social({
     provider,
-    callbackURL: VERIFIED_CALLBACK_URL,
+    callbackURL,
     errorCallbackURL: "/",
   });
 

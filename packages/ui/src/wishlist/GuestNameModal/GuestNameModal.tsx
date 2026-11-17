@@ -9,12 +9,15 @@ interface GuestNameModalProps {
   initialName?: string;
   onConfirm: (name: string) => void;
   onClose: () => void;
+  /** Shows a "sign in instead" link when provided. */
+  onSignIn?: () => void;
 }
 
 export function GuestNameModal({
   initialName = "",
   onConfirm,
   onClose,
+  onSignIn,
 }: GuestNameModalProps) {
   const [name, setName] = useState(initialName);
 
@@ -56,6 +59,17 @@ export function GuestNameModal({
           >
             I&apos;ll gift this
           </button>
+          {onSignIn && (
+            <p className="text-xs text-muted-foreground text-center">
+              Have an account?{" "}
+              <button
+                onClick={onSignIn}
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                Sign in instead
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>
