@@ -39,10 +39,13 @@ export function WishlistHero({
             {date && (
               <span>
                 📅{" "}
+                {/* A date-only string parses as UTC midnight; formatting it
+                    in the viewer's zone would show the day before west of UTC. */}
                 {new Date(date).toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
+                  timeZone: "UTC",
                 })}
               </span>
             )}

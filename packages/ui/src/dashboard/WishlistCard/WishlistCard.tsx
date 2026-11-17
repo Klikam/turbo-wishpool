@@ -59,10 +59,13 @@ export function WishlistCard({
         </h2>
         {date && (
           <p className="text-xs text-muted-foreground mt-1">
+            {/* A date-only string parses as UTC midnight; formatting it in
+                the viewer's zone would show the day before west of UTC. */}
             {new Date(date).toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
               year: "numeric",
+              timeZone: "UTC",
             })}
           </p>
         )}
