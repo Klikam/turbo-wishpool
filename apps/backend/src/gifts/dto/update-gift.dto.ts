@@ -1,10 +1,5 @@
 import { OmitType, PartialType } from '@nestjs/mapped-types';
-import {
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, ValidateIf } from 'class-validator';
 import { CreateGiftDto } from './create-gift.dto';
 
 // Optional fields may be sent as null to clear them. `name` can't be cleared,
