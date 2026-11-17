@@ -5,7 +5,7 @@ import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, wishlistsTable } from '../db/schema';
 import { CreateGiftDto } from './dto/create-gift.dto';
 import { UpdateGiftDto } from './dto/update-gift.dto';
-import { ownerGiftColumns } from './gift.columns';
+import { giftsOrder, ownerGiftColumns } from './gift.columns';
 import { LinkPreviewService } from './link-preview.service';
 
 @Injectable()
@@ -39,7 +39,8 @@ export class GiftService {
     return this.db
       .select(ownerGiftColumns)
       .from(giftsTable)
-      .where(eq(giftsTable.wishlistId, wishlistId));
+      .where(eq(giftsTable.wishlistId, wishlistId))
+      .orderBy(...giftsOrder);
   }
 
   async findOne(userId: number, wishlistId: string, id: string) {

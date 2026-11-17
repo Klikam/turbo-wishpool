@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq, getColumns } from 'drizzle-orm';
+import { and, count, desc, eq, getColumns, sql } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, wishlistsTable } from '../db/schema';
-import { ownerGiftColumns } from '../gifts/gift.columns';
+import { giftsOrder, ownerGiftColumns } from '../gifts/gift.columns';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 
@@ -24,6 +24,7 @@ export class WishlistService {
   }
 
   async findAll(userId: number) {
+    // Lists without a date go last (Postgres puts nulls first in desc).
     return this.db
       .select({
         ...getColumns(wishlistsTable),
@@ -33,7 +34,10 @@ export class WishlistService {
       .leftJoin(giftsTable, eq(giftsTable.wishlistId, wishlistsTable.id))
       .where(eq(wishlistsTable.userId, userId))
       .groupBy(wishlistsTable.id)
-      .orderBy(desc(wishlistsTable.date));
+      .orderBy(
+        sql`${wishlistsTable.date} desc nulls last`,
+        desc(wishlistsTable.createdAt),
+      );
   }
 
   async findOne(userId: number, id: string) {
@@ -47,7 +51,8 @@ export class WishlistService {
     const gifts = await this.db
       .select(ownerGiftColumns)
       .from(giftsTable)
-      .where(eq(giftsTable.wishlistId, id));
+      .where(eq(giftsTable.wishlistId, id))
+      .orderBy(...giftsOrder);
 
     return { ...wishlist, gifts };
   }

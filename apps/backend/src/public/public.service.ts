@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, usersTable, wishlistsTable } from '../db/schema';
+import { giftsOrder } from '../gifts/gift.columns';
 
 export type Viewer = { userId: number } | { guestTokenHash: string } | null;
 
@@ -95,7 +96,8 @@ export class PublicService {
     const gifts = await this.db
       .select()
       .from(giftsTable)
-      .where(eq(giftsTable.wishlistId, wishlistId));
+      .where(eq(giftsTable.wishlistId, wishlistId))
+      .orderBy(...giftsOrder);
 
     const { ownerId, ...publicWishlist } = wishlist;
     const isOwner =

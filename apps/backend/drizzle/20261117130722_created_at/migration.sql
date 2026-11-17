@@ -1,0 +1,2 @@
+ALTER TABLE "gifts" ADD COLUMN "createdAt" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "wishlists" ADD COLUMN "createdAt" timestamp with time zone DEFAULT now() NOT NULL;

@@ -97,6 +97,7 @@ export const wishlistsTable = pgTable.withRLS(
     occasion: occasionEnum(),
     date: date(),
     note: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index().on(table.userId)],
 );
@@ -119,6 +120,7 @@ export const giftsTable = pgTable.withRLS(
     reservedByName: varchar({ length: 255 }),
     reservedByGuestTokenHash: varchar({ length: 64 }),
     reservedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index().on(table.wishlistId),
