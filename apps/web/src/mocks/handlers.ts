@@ -29,12 +29,11 @@ export const signUpSuccess = http.post(authUrl('/sign-up/email'), () =>
   HttpResponse.json({ token: null, user: mockAuthUser }),
 );
 
-export const signUpEmailTaken = http.post(authUrl('/sign-up/email'), () =>
+// An already registered email isn't an error: with email verification
+// required, better-auth answers it like a successful sign-up.
+export const signUpRateLimited = http.post(authUrl('/sign-up/email'), () =>
   HttpResponse.json(
-    {
-      code: 'USER_ALREADY_EXISTS',
-      message: 'User already exists. Use another email.',
-    },
-    { status: 422 },
+    { message: 'Too many requests. Please try again later.' },
+    { status: 429 },
   ),
 );

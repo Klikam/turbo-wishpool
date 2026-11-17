@@ -1,7 +1,7 @@
 import type { RegisterCredentials, SignInCredentials } from "@repo/types";
 import { authClient } from "@/lib/auth-client";
 
-type LoginResult = { ok: true } | { ok: false; error: string };
+type AuthResult = { ok: true } | { ok: false; error: string };
 
 const FORBIDDEN = 403;
 const TOO_MANY_REQUESTS = 429;
@@ -10,11 +10,15 @@ const TOO_MANY_REQUESTS = 429;
 // (e.g. back to a shared wishlist). Also the target of the verification email.
 export const DEFAULT_CALLBACK_URL = "/dashboard";
 
-/** Creates the account and emails a verification link; nobody is signed in yet. */
-export const register = async (
+/**
+ * Creates the account and emails a verification link; nobody is signed in yet.
+ * An already registered email also succeeds (better-auth answers generically
+ * so the form can't be used to find out who has an account).
+ */
+export async function register(
   credentials: RegisterCredentials,
   callbackURL = DEFAULT_CALLBACK_URL,
-) => {
+): Promise<AuthResult> {
   const { error } = await authClient.signUp.email({
     name: credentials.name,
     email: credentials.email,
@@ -22,13 +26,22 @@ export const register = async (
     callbackURL,
   });
 
-  if (error) throw new Error(error.message ?? "Registration failed");
-};
+  if (!error) return { ok: true };
+
+  if (error.status === TOO_MANY_REQUESTS) {
+    return { ok: false, error: "Too many attempts, try again in a minute" };
+  }
+
+  return {
+    ok: false,
+    error: error.message ?? "Registration failed. Please try again.",
+  };
+}
 
 export async function login(
   credentials: SignInCredentials,
   callbackURL = DEFAULT_CALLBACK_URL,
-): Promise<LoginResult> {
+): Promise<AuthResult> {
   const { error } = await authClient.signIn.email({
     email: credentials.email,
     password: credentials.password,

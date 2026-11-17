@@ -23,25 +23,24 @@ export default function CredentialsPage({
   callbackURL = DEFAULT_CALLBACK_URL,
 }: CredentialsPageProps) {
   const [mode, setMode] = useState<Mode>("signin");
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const router = useRouter();
 
   const onSubmit: SubmitHandler<RegisterCredentials> = async (data) => {
-    setLoginError(null);
+    setSubmitError(null);
     setNotice(null);
 
     if (mode === "register") {
-      try {
-        await onRegister(data, callbackURL);
+      const response = await onRegister(data, callbackURL);
+
+      if (response.ok) {
         setMode("signin");
         setNotice(
           `Almost there! We sent a verification link to ${data.email}. Open it to finish creating your account.`,
         );
-      } catch (error) {
-        console.log(
-          error instanceof Error ? error.message : "Registration failed",
-        );
+      } else {
+        setSubmitError(response.error);
       }
       return;
     }
@@ -53,7 +52,7 @@ export default function CredentialsPage({
       router.push(callbackURL);
       router.refresh();
     } else {
-      setLoginError(response.error);
+      setSubmitError(response.error);
     }
   };
 
@@ -75,7 +74,7 @@ export default function CredentialsPage({
           mode={mode}
           handleModeChange={() => {
             setMode("signin");
-            setLoginError(null);
+            setSubmitError(null);
             setNotice(null);
           }}
         />
@@ -84,7 +83,7 @@ export default function CredentialsPage({
           mode={mode}
           handleModeChange={() => {
             setMode("register");
-            setLoginError(null);
+            setSubmitError(null);
             setNotice(null);
           }}
         />
@@ -130,7 +129,7 @@ export default function CredentialsPage({
           <ToastError message={errors.password.message} />
         )}
 
-        {mode === "signin" && loginError && <ToastError message={loginError} />}
+        {submitError && <ToastError message={submitError} />}
 
         {mode === "signin" && notice && (
           <p

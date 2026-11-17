@@ -4,7 +4,7 @@ import {
   mockAuthUser,
   signInInvalidCredentials,
   signInSuccess,
-  signUpEmailTaken,
+  signUpRateLimited,
   signUpSuccess,
 } from '@/mocks/handlers';
 import CredentialsPage from './CredentialsPage';
@@ -99,23 +99,11 @@ export const SignUpSuccess: Story = {
   },
 };
 
-export const SignUpEmailTaken: Story = {
-  parameters: {
-    msw: { handlers: [signUpEmailTaken] },
-    docs: {
-      description: {
-        story:
-          'CredentialsPage only console.logs registration errors (see ' +
-          'components/pages/CredentialsPage.tsx) — nothing renders on screen ' +
-          'yet, so this story asserts on that console.log instead of DOM text.',
-      },
-    },
-  },
+export const SignUpFailed: Story = {
+  parameters: { msw: { handlers: [signUpRateLimited] } },
   play: async ({ canvasElement }) => {
-    const logSpy = spyOn(console, 'log').mockImplementation(() => undefined);
-    await userEvent.click(
-      within(canvasElement).getByRole('button', { name: 'Register' }),
-    );
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Register' }));
     await fillAndSubmit(
       canvasElement,
       {
@@ -125,10 +113,10 @@ export const SignUpEmailTaken: Story = {
       },
       'Create account',
     );
-    await waitFor(() =>
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('already exists'),
-      ),
-    );
+    await expect(
+      await canvas.findByText('Too many attempts, try again in a minute'),
+    ).toBeInTheDocument();
+    // A failed registration keeps the form in register mode.
+    await expect(canvas.getByLabelText('Full name')).toBeInTheDocument();
   },
 };
