@@ -92,7 +92,7 @@ export function AddGiftModal({ onAdd, onClose }: AddGiftModalProps) {
           </div>
           <TextField
             label="Image URL"
-            placeholder="https://… (optional)"
+            placeholder="Optional — taken from the link if empty"
             value={newGift.imageUrl}
             onChange={(imageUrl) => {
               setNewGift({ ...newGift, imageUrl });

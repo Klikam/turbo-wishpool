@@ -1,4 +1,7 @@
-import { Check, ExternalLink, Trash2 } from "lucide-react";
+"use client";
+
+import { Check, ExternalLink, Gift, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 interface GiftCardProps {
   name: string;
@@ -27,13 +30,10 @@ export function GiftCard({
   onUnclaim,
   onDelete,
 }: GiftCardProps) {
-  const fallbackImages: Record<number, string> = {
-    0: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300&h=200&fit=crop&auto=format",
-    1: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=300&h=200&fit=crop&auto=format",
-    2: "https://images.unsplash.com/photo-1513201099705-a9746072788e?w=300&h=200&fit=crop&auto=format",
-    3: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop&auto=format",
-  };
-  const imgSrc = imageUrl || fallbackImages[name.charCodeAt(0) % 4];
+  // Shop images can disappear or block hotlinking, so a broken one falls back
+  // to the placeholder too.
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = imageUrl && !imageFailed;
 
   return (
     <div
@@ -45,7 +45,23 @@ export function GiftCard({
     >
       <div className="relative">
         <div className="h-40 bg-secondary overflow-hidden">
-          <img src={imgSrc} alt={name} className="w-full h-full object-cover" />
+          {showImage ? (
+            <img
+              src={imageUrl}
+              alt={name}
+              referrerPolicy="no-referrer"
+              onError={() => setImageFailed(true)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary to-[#E8B89A]/30">
+              <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full border border-primary/10" />
+              <div className="absolute -bottom-12 -left-8 w-36 h-36 rounded-full border border-primary/10" />
+              <div className="relative w-14 h-14 rounded-full bg-card/80 flex items-center justify-center shadow-sm">
+                <Gift className="w-6 h-6 text-[#C4797A]" />
+              </div>
+            </div>
+          )}
         </div>
         {claimed && (
           <div className="absolute inset-0 bg-primary/60 flex items-center justify-center">

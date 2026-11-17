@@ -6,20 +6,26 @@ import { giftsTable, wishlistsTable } from '../db/schema';
 import { CreateGiftDto } from './dto/create-gift.dto';
 import { UpdateGiftDto } from './dto/update-gift.dto';
 import { ownerGiftColumns } from './gift.columns';
+import { LinkPreviewService } from './link-preview.service';
 
 @Injectable()
 export class GiftService {
   constructor(
     @Inject(DrizzleAsyncProvider)
     private db: Database,
+    private linkPreview: LinkPreviewService,
   ) {}
 
   async create(userId: number, wishlistId: string, dto: CreateGiftDto) {
     await this.assertWishlistOwner(userId, wishlistId);
 
+    const imageUrl =
+      dto.imageUrl ??
+      (dto.url ? await this.linkPreview.findImageUrl(dto.url) : undefined);
+
     const [gift] = await this.db
       .insert(giftsTable)
-      .values({ ...dto, wishlistId })
+      .values({ ...dto, imageUrl, wishlistId })
       .returning(ownerGiftColumns);
 
     return gift;
