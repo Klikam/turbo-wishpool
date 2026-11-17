@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { lookup } from 'node:dns/promises';
-import { BlockList, isIP } from 'node:net';
+import { lookup } from 'node:dns';
+import { BlockList, isIP, type LookupFunction } from 'node:net';
+import { Agent, fetch, type Response } from 'undici';
 
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
@@ -32,6 +33,31 @@ for (const [net, prefix] of [
 ] as const) {
   blockedAddresses.addSubnet(net, prefix, 'ipv6');
 }
+
+/**
+ * dns.lookup that refuses private addresses. It runs when the socket
+ * connects, so the address that was checked is the one connected to: a
+ * hostname can't pass a check and then resolve somewhere else (DNS rebinding).
+ */
+const publicOnlyLookup: LookupFunction = (hostname, options, callback) => {
+  lookup(hostname, { ...options, all: true }, (error, addresses) => {
+    if (error) return callback(error, '');
+
+    const blocked = addresses.find(({ address, family }) =>
+      isBlockedAddress(address, family),
+    );
+    if (blocked) {
+      return callback(new Error(`Blocked address ${blocked.address}`), '');
+    }
+
+    if (options.all) return callback(null, addresses);
+    const [first] = addresses;
+    if (!first) return callback(new Error(`No address for ${hostname}`), '');
+    callback(null, first.address, first.family);
+  });
+};
+
+const publicOnlyAgent = new Agent({ connect: { lookup: publicOnlyLookup } });
 
 // Preview image tags in order of preference.
 const IMAGE_META_KEYS = [
@@ -71,11 +97,12 @@ export class LinkPreviewService {
     let url = new URL(startUrl);
 
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      await assertPublicHost(url);
+      assertPublicHost(url);
 
       const response = await fetch(url, {
         signal,
         redirect: 'manual',
+        dispatcher: publicOnlyAgent,
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; WishpoolBot/1.0)',
           Accept: 'text/html,application/xhtml+xml',
@@ -102,27 +129,26 @@ export class LinkPreviewService {
   }
 }
 
-async function assertPublicHost(url: URL) {
+// Hostnames are checked by publicOnlyLookup; IP literals never reach it
+// because sockets connect to them without a lookup.
+function assertPublicHost(url: URL) {
   if (!['http:', 'https:'].includes(url.protocol)) {
     throw new Error(`Unsupported protocol ${url.protocol}`);
   }
 
   const hostname = url.hostname.replace(/^\[|\]$/g, '');
-  const addresses = isIP(hostname)
-    ? [{ address: hostname, family: isIP(hostname) }]
-    : await lookup(hostname, { all: true });
-
-  for (const { address, family } of addresses) {
-    // Check IPv4-mapped IPv6 (::ffff:10.0.0.1 / ::ffff:a00:1) against the IPv4 rules.
-    const mapped = toMappedIPv4(address);
-    const blocked = mapped
-      ? blockedAddresses.check(mapped, 'ipv4')
-      : blockedAddresses.check(address, family === 6 ? 'ipv6' : 'ipv4');
-
-    if (blocked) {
-      throw new Error(`Blocked address ${address}`);
-    }
+  const family = isIP(hostname);
+  if (family && isBlockedAddress(hostname, family)) {
+    throw new Error(`Blocked address ${hostname}`);
   }
+}
+
+function isBlockedAddress(address: string, family: number) {
+  // Check IPv4-mapped IPv6 (::ffff:10.0.0.1 / ::ffff:a00:1) against the IPv4 rules.
+  const mapped = toMappedIPv4(address);
+  return mapped
+    ? blockedAddresses.check(mapped, 'ipv4')
+    : blockedAddresses.check(address, family === 6 ? 'ipv6' : 'ipv4');
 }
 
 function toMappedIPv4(address: string) {
@@ -140,7 +166,9 @@ function toMappedIPv4(address: string) {
 
 // Preview tags live in <head>, so the start of the page is enough.
 async function readCapped(response: Response) {
-  const reader = response.body?.getReader();
+  // undici types the body as a stream of `any`; it yields bytes.
+  const body = response.body as ReadableStream<Uint8Array> | null;
+  const reader = body?.getReader();
   if (!reader) return '';
 
   const decoder = new TextDecoder();
