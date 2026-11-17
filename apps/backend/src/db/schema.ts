@@ -1,3 +1,4 @@
+import { isNotNull } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -85,31 +86,45 @@ export const verificationsTable = pgTable.withRLS('verifications', {
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export const wishlistsTable = pgTable.withRLS('wishlists', {
-  id: uuid().primaryKey().defaultRandom(),
-  userId: integer()
-    .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
-  title: varchar({ length: 255 }).notNull(),
-  occasion: occasionEnum(),
-  date: date(),
-  note: text(),
-});
+export const wishlistsTable = pgTable.withRLS(
+  'wishlists',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: integer()
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    title: varchar({ length: 255 }).notNull(),
+    occasion: occasionEnum(),
+    date: date(),
+    note: text(),
+  },
+  (table) => [index().on(table.userId)],
+);
 
-export const giftsTable = pgTable.withRLS('gifts', {
-  id: uuid().primaryKey().defaultRandom(),
-  wishlistId: uuid()
-    .notNull()
-    .references(() => wishlistsTable.id, { onDelete: 'cascade' }),
-  name: varchar({ length: 255 }).notNull(),
-  description: text(),
-  price: numeric({ precision: 10, scale: 2, mode: 'number' }),
-  url: varchar({ length: 2048 }),
-  imageUrl: varchar({ length: 2048 }),
-  reservedByUserId: integer().references(() => usersTable.id, {
-    onDelete: 'set null',
-  }),
-  reservedByName: varchar({ length: 255 }),
-  reservedByGuestTokenHash: varchar({ length: 64 }),
-  reservedAt: timestamp({ withTimezone: true }),
-});
+export const giftsTable = pgTable.withRLS(
+  'gifts',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    wishlistId: uuid()
+      .notNull()
+      .references(() => wishlistsTable.id, { onDelete: 'cascade' }),
+    name: varchar({ length: 255 }).notNull(),
+    description: text(),
+    price: numeric({ precision: 10, scale: 2, mode: 'number' }),
+    url: varchar({ length: 2048 }),
+    imageUrl: varchar({ length: 2048 }),
+    reservedByUserId: integer().references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
+    reservedByName: varchar({ length: 255 }),
+    reservedByGuestTokenHash: varchar({ length: 64 }),
+    reservedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    index().on(table.wishlistId),
+    // Only guest reservations have a hash; looked up when a guest signs in.
+    index()
+      .on(table.reservedByGuestTokenHash)
+      .where(isNotNull(table.reservedByGuestTokenHash)),
+  ],
+);
