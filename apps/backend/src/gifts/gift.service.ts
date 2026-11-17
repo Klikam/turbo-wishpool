@@ -1,5 +1,5 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, wishlistsTable } from '../db/schema';
@@ -10,6 +10,8 @@ import { LinkPreviewService } from './link-preview.service';
 
 @Injectable()
 export class GiftService {
+  private readonly logger = new Logger(GiftService.name);
+
   constructor(
     @Inject(DrizzleAsyncProvider)
     private db: Database,
@@ -19,14 +21,14 @@ export class GiftService {
   async create(userId: number, wishlistId: string, dto: CreateGiftDto) {
     await this.assertWishlistOwner(userId, wishlistId);
 
-    const imageUrl =
-      dto.imageUrl ??
-      (dto.url ? await this.linkPreview.findImageUrl(dto.url) : undefined);
-
     const [gift] = await this.db
       .insert(giftsTable)
-      .values({ ...dto, imageUrl, wishlistId })
+      .values({ ...dto, wishlistId })
       .returning(ownerGiftColumns);
+
+    if (gift && !dto.imageUrl && dto.url) {
+      this.fillImageInBackground(gift.id, dto.url);
+    }
 
     return gift;
   }
@@ -84,6 +86,36 @@ export class GiftService {
       .returning({ id: giftsTable.id });
 
     if (deleted.length === 0) throw new NotFoundException('Gift not found');
+  }
+
+  /**
+   * Takes the gift's image from its link once it's saved, so adding a gift
+   * doesn't wait for a slow shop page (up to the preview's fetch timeout).
+   * Leaves the gift alone if an image was set or the link changed meanwhile.
+   */
+  private fillImageInBackground(giftId: string, url: string) {
+    this.linkPreview
+      .findImageUrl(url)
+      .then(async (imageUrl) => {
+        if (!imageUrl) return;
+
+        await this.db
+          .update(giftsTable)
+          .set({ imageUrl })
+          .where(
+            and(
+              eq(giftsTable.id, giftId),
+              eq(giftsTable.url, url),
+              isNull(giftsTable.imageUrl),
+            ),
+          );
+      })
+      .catch((error: unknown) => {
+        this.logger.error(
+          `Failed to save the preview image of gift ${giftId}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
   }
 
   private async assertWishlistOwner(userId: number, wishlistId: string) {

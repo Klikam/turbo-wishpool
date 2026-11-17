@@ -39,6 +39,9 @@ interface WishlistViewProps {
 
 type LoadStatus = "loading" | "ready" | "notFound" | "error";
 
+// Just over the backend's 5 s limit for fetching a gift link's preview image.
+const IMAGE_LOOKUP_DELAY_MS = 6000;
+
 export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) {
   const router = useRouter();
   const guestToken = useGuestToken();
@@ -121,16 +124,24 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
   }
 
   async function handleAddGift(newGift: NewGift) {
+    const url = emptyToNull(newGift.url);
+    const imageUrl = emptyToNull(newGift.imageUrl);
     const added = await mutate(() =>
       addGift(wishlistId, {
         name: newGift.name,
         description: emptyToNull(newGift.description),
         price: parsePrice(newGift.price),
-        url: emptyToNull(newGift.url),
-        imageUrl: emptyToNull(newGift.imageUrl),
+        url,
+        imageUrl,
       }),
     );
-    if (added) setShowAddGift(false);
+    if (!added) return;
+
+    setShowAddGift(false);
+    // The backend takes the image from the link after saving the gift.
+    if (url && !imageUrl) {
+      setTimeout(() => void load(), IMAGE_LOOKUP_DELAY_MS);
+    }
   }
 
   if (!wishlist) {
