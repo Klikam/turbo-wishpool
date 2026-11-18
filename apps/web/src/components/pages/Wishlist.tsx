@@ -2,15 +2,12 @@
 
 import {
   addGift,
-  adoptGuestReservations,
   cancelReservation,
   deleteGift,
-  getPublicWishlist,
   reserveGift,
 } from "@/actions/wishlists";
 import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
 import { SignInModal } from "@/components/sections/SignInModal";
-import { useGuestToken } from "@/hooks/useGuestToken";
 import type { GiftItem } from "@/types/giftItem";
 import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import type { ActionResult } from "@/utils/actionResult";
@@ -28,26 +25,22 @@ import {
 } from "@repo/ui";
 import { LogIn, Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
 interface WishlistViewProps {
-  wishlistId: string;
+  wishlist: Wishlist;
   isSignedIn: boolean;
 }
-
-type LoadStatus = "loading" | "ready" | "notFound" | "error";
 
 // Just over the backend's 5 s limit for fetching a gift link's preview image.
 const IMAGE_LOOKUP_DELAY_MS = 6000;
 
-export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) {
+export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   const router = useRouter();
-  const guestToken = useGuestToken();
+  const wishlistId = wishlist.id;
 
-  const [wishlist, setWishlist] = useState<Wishlist | null>(null);
-  const [status, setStatus] = useState<LoadStatus>("loading");
   const [showAddGift, setShowAddGift] = useState(false);
   // Gift a guest is about to reserve, while the name dialog is open.
   const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
@@ -56,36 +49,7 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
   const [giftToDelete, setGiftToDelete] = useState<GiftItem | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const isOwner = wishlist?.isOwner ?? false;
-
-  const load = useCallback(async () => {
-    try {
-      const loaded = await getPublicWishlist(wishlistId, guestToken);
-      setWishlist(loaded);
-      setStatus(loaded ? "ready" : "notFound");
-    } catch (e) {
-      console.error(e);
-      setStatus("error");
-    }
-  }, [wishlistId, guestToken]);
-
-  useEffect(() => {
-    // The guest token is only known after mount.
-    if (!guestToken) return;
-
-    void (async () => {
-      // Claims made before signing in (e.g. via the sign-in dialog here)
-      // become the account's, so they still show as "You're gifting this".
-      if (isSignedIn) {
-        try {
-          await adoptGuestReservations(guestToken);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      await load();
-    })();
-  }, [guestToken, isSignedIn, load]);
+  const isOwner = wishlist.isOwner;
 
   function goBack() {
     router.push(isSignedIn ? "/dashboard" : "/");
@@ -95,13 +59,13 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
   async function mutate(run: () => Promise<ActionResult<unknown>>) {
     const result = await run();
     if (!result.ok) toast.error(result.error);
-    await load();
+    router.refresh();
     return result.ok;
   }
 
   function handleClaim(giftId: string) {
     if (isSignedIn) {
-      void mutate(() => reserveGift(wishlistId, giftId, guestToken));
+      void mutate(() => reserveGift(wishlistId, giftId));
     } else {
       setClaimingGiftId(giftId);
     }
@@ -112,11 +76,11 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
     const giftId = claimingGiftId;
     setClaimingGiftId(null);
     storageHelper.save(storageHelper.STORAGE_KEYS.guestName, name);
-    void mutate(() => reserveGift(wishlistId, giftId, guestToken, name));
+    void mutate(() => reserveGift(wishlistId, giftId, name));
   }
 
   function handleUnclaim(giftId: string) {
-    void mutate(() => cancelReservation(wishlistId, giftId, guestToken));
+    void mutate(() => cancelReservation(wishlistId, giftId));
   }
 
   function handleDelete(giftId: string) {
@@ -140,34 +104,10 @@ export default function Wishlist({ wishlistId, isSignedIn }: WishlistViewProps) 
     setShowAddGift(false);
     // The backend takes the image from the link after saving the gift.
     if (url && !imageUrl) {
-      setTimeout(() => void load(), IMAGE_LOOKUP_DELAY_MS);
+      setTimeout(() => {
+        router.refresh();
+      }, IMAGE_LOOKUP_DELAY_MS);
     }
-  }
-
-  if (!wishlist) {
-    return (
-      <div className="flex-1 bg-background flex items-center justify-center">
-        <div className="text-center">
-          {status === "loading" ? (
-            <p className="text-muted-foreground">Loading…</p>
-          ) : (
-            <>
-              <p className="text-muted-foreground">
-                {status === "error"
-                  ? "Something went wrong loading this wishlist."
-                  : "Wishlist not found."}
-              </p>
-              <button
-                onClick={goBack}
-                className="mt-4 text-primary underline text-sm"
-              >
-                Go back
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
   }
 
   // The backend hides reservations from the owner, so there is no count to show.

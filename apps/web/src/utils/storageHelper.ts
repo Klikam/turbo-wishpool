@@ -3,7 +3,6 @@ import z from 'zod';
 /** Per-browser conveniences only; wishlist data lives in the backend. */
 export const storageHelper = {
   STORAGE_KEYS: {
-    guestToken: 'wishpool_guest_token',
     guestName: 'wishpool_guest_name',
   } as const,
 

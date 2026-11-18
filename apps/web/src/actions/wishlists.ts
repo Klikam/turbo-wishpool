@@ -1,6 +1,7 @@
 "use server";
 
 import { getOptionalSession, verifySession } from "@/lib/dal";
+import { guestTokenHeaders } from "@/lib/guestToken";
 import type { Occasion, Wishlist, WishlistSummary } from "@/types/wishlist";
 import { toResult } from "@/utils/actionResult";
 import { api, ApiError } from "@/utils/apiHelper";
@@ -91,12 +92,11 @@ export async function deleteGift(wishlistId: string, giftId: string) {
 
 /**
  * Public view of a wishlist, from the viewer's perspective. Works without a
- * session; `guestToken` identifies anonymous visitors so their own
+ * session; the guest token cookie identifies anonymous visitors so their own
  * reservations are flagged `reservedByMe`. Returns null when it doesn't exist.
  */
 export async function getPublicWishlist(
   wishlistId: string,
-  guestToken: string,
 ): Promise<Wishlist | null> {
   const session = await getOptionalSession();
 
@@ -104,7 +104,7 @@ export async function getPublicWishlist(
     return await api<Wishlist>(
       `public/wishlists/${wishlistId}`,
       session?.accessToken ?? null,
-      { headers: { "x-guest-token": guestToken } },
+      { headers: await guestTokenHeaders() },
     );
   } catch (e) {
     // A malformed id is rejected by the backend's UUID validation (400).
@@ -119,20 +119,16 @@ export async function getPublicWishlist(
 export async function reserveGift(
   wishlistId: string,
   giftId: string,
-  guestToken: string,
   name?: string,
 ) {
   const session = await getOptionalSession();
+  const headers = await guestTokenHeaders();
 
   return toResult(() =>
     api<void>(
       `public/wishlists/${wishlistId}/gifts/${giftId}/reservation`,
       session?.accessToken ?? null,
-      {
-        method: "PUT",
-        body: { name },
-        headers: { "x-guest-token": guestToken },
-      },
+      { method: "PUT", body: { name }, headers },
     ),
   );
 }
@@ -141,32 +137,26 @@ export async function reserveGift(
  * After signing in, takes over the reservations this browser made as a guest
  * so the user can still see and undo them. A no-op without a session.
  */
-export async function adoptGuestReservations(guestToken: string) {
+export async function adoptGuestReservations() {
   const session = await getOptionalSession();
   if (!session) return;
 
   await api<{ adopted: number }>(
     "public/guest-reservations/adopt",
     session.accessToken,
-    { method: "POST", headers: { "x-guest-token": guestToken } },
+    { method: "POST", headers: await guestTokenHeaders() },
   );
 }
 
-export async function cancelReservation(
-  wishlistId: string,
-  giftId: string,
-  guestToken: string,
-) {
+export async function cancelReservation(wishlistId: string, giftId: string) {
   const session = await getOptionalSession();
+  const headers = await guestTokenHeaders();
 
   return toResult(() =>
     api<void>(
       `public/wishlists/${wishlistId}/gifts/${giftId}/reservation`,
       session?.accessToken ?? null,
-      {
-        method: "DELETE",
-        headers: { "x-guest-token": guestToken },
-      },
+      { method: "DELETE", headers },
     ),
   );
 }
