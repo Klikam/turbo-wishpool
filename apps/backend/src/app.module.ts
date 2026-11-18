@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { validateEnv } from './config/env.validation';
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
@@ -9,7 +10,8 @@ import { PublicModule } from './public/public.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    // Loaded once for the whole app; feature modules inject ConfigService.
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     DrizzleModule,
     UserModule,
     AuthModule,

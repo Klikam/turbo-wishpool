@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import {
@@ -13,7 +13,7 @@ import { createAuth, type OAuthCredentials } from './auth.config';
 @Module({
   imports: [
     BetterAuthModule.forRootAsync({
-      imports: [ConfigModule, DrizzleModule, MailModule],
+      imports: [DrizzleModule, MailModule],
       inject: [ConfigService, DrizzleAsyncProvider, MailService],
       useFactory: (config: ConfigService, db: Database, mail: MailService) => ({
         auth: createAuth(db, {

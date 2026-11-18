@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { PublicService } from './public.service';
@@ -8,7 +7,6 @@ import { GuestReservationsController } from './guest-reservations.controller';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
     DrizzleModule,
     // Reservation changes per visitor IP and minute: plenty for a person,
     // too few for a script claiming every gift on a list.

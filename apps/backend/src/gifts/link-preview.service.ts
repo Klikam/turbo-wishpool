@@ -143,7 +143,7 @@ function assertPublicHost(url: URL) {
   }
 }
 
-function isBlockedAddress(address: string, family: number) {
+export function isBlockedAddress(address: string, family: number) {
   // Check IPv4-mapped IPv6 (::ffff:10.0.0.1 / ::ffff:a00:1) against the IPv4 rules.
   const mapped = toMappedIPv4(address);
   return mapped
@@ -185,7 +185,7 @@ async function readCapped(response: Response) {
   return html;
 }
 
-function extractImageUrl(html: string) {
+export function extractImageUrl(html: string) {
   const found = new Map<string, string>();
 
   for (const [tag] of html.matchAll(/<meta\b[^>]*>/gi)) {

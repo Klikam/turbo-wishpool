@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { trustProxy } from './config/trust-proxy';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(
@@ -24,14 +25,6 @@ async function bootstrap() {
   );
 
   await app.listen(process.env.PORT ?? 3001);
-}
-
-/** Express's `trust proxy` setting from its env var form. */
-function trustProxy(value = 'loopback'): boolean | number | string {
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  if (/^\d+$/.test(value)) return Number(value);
-  return value;
 }
 
 void bootstrap();

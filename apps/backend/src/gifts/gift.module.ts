@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { GiftService } from './gift.service';
 import { GiftController } from './gift.controller';
 import { LinkPreviewService } from './link-preview.service';
 
 @Module({
-  imports: [ConfigModule.forRoot(), DrizzleModule],
+  imports: [DrizzleModule],
   controllers: [GiftController],
   providers: [GiftService, LinkPreviewService],
 })
