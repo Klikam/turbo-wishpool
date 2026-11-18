@@ -35,7 +35,6 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
   }
 
   async function handleLogout() {
-    console.log(`Logged out user ${user.name}`);
     await onLogout();
     router.push("/");
     router.refresh();

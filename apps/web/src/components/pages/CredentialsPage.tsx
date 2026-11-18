@@ -48,7 +48,6 @@ export default function CredentialsPage({
     const response = await onLogin(data, callbackURL);
 
     if (response.ok) {
-      console.log(`Logged in as ${data.email}`);
       router.push(callbackURL);
       router.refresh();
     } else {

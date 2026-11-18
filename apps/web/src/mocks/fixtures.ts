@@ -1,21 +1,11 @@
+import type { SessionUser } from '@/lib/session';
 import type { GiftItem } from '@/types/giftItem';
-import type { User } from '@/types/user';
 import type { Wishlist, WishlistSummary } from '@/types/wishlist';
 
-export const mockUser: User = {
+export const mockUser: SessionUser = {
   id: 'users-1',
   name: 'Emma Thornton',
   email: 'emma@example.com',
-  avatar: '',
-  provider: 'google',
-};
-
-export const mockOtherUser: User = {
-  id: 'users-2',
-  name: 'Noah Bennett',
-  email: 'noah@example.com',
-  avatar: '',
-  provider: 'email',
 };
 
 export const mockGift = (overrides: Partial<GiftItem> = {}): GiftItem => ({
