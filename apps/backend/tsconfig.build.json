@@ -1,4 +1,7 @@
 {
   "extends": "./tsconfig.json",
+  // Only the app: with root files like drizzle.config.ts included, output
+  // would land in dist/src/ instead of dist/.
+  "include": ["src", "module.d.ts"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
