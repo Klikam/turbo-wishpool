@@ -2,13 +2,16 @@
 
 import {
   addGift,
+  cancelGiftRequest,
   cancelReservation,
   deleteGift,
+  requestGift,
   reserveGift,
+  respondToGiftRequest,
   updateGift,
 } from "@/actions/wishlists";
 import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
-import type { GiftItem } from "@/types/giftItem";
+import type { GiftItem, GiftRequestType } from "@/types/giftItem";
 import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import type { ActionResult } from "@/utils/actionResult";
 import {
@@ -77,6 +80,12 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
 
   const isOwner = wishlist.isOwner;
 
+  /** An equal share of a gift's price, or undefined without a price. */
+  function perPerson(price: number | null, people: number) {
+    if (price === null || people < 2) return undefined;
+    return formatPrice(price / people, wishlist.currency);
+  }
+
   function goBack() {
     router.push("/dashboard");
   }
@@ -114,6 +123,28 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
 
   function handleUnclaim(giftId: string) {
     mutate(() => cancelReservation(wishlistId, giftId), { giftId });
+  }
+
+  function handleRequest(giftId: string, type: GiftRequestType) {
+    mutate(() => requestGift(wishlistId, giftId, type), {
+      giftId,
+      onSuccess: () =>
+        toast.success(
+          "Request sent. They've been emailed and you'll hear back by email.",
+        ),
+    });
+  }
+
+  function handleCancelRequest(giftId: string, requestId: string) {
+    mutate(() => cancelGiftRequest(wishlistId, giftId, requestId), { giftId });
+  }
+
+  function handleRespond(giftId: string, requestId: string, accept: boolean) {
+    mutate(() => respondToGiftRequest(wishlistId, giftId, requestId, accept), {
+      giftId,
+      onSuccess: () =>
+        toast.success(accept ? "Accepted. We've told them." : "Declined."),
+    });
   }
 
   function handleDelete(giftId: string) {
@@ -225,6 +256,23 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
             {gifts.map((gift) => (
               <GiftCard
                 key={gift.id}
+                reservers={gift.reservers}
+                pricePerPerson={perPerson(gift.price, gift.reservers.length)}
+                pricePerPersonIfJoined={perPerson(
+                  gift.price,
+                  gift.reservers.length + 1,
+                )}
+                myRequest={gift.myRequest}
+                incomingRequests={gift.incomingRequests}
+                onRequest={(type) => {
+                  handleRequest(gift.id, type);
+                }}
+                onCancelRequest={() => {
+                  if (gift.myRequest) handleCancelRequest(gift.id, gift.myRequest.id);
+                }}
+                onRespond={(requestId, accept) => {
+                  handleRespond(gift.id, requestId, accept);
+                }}
                 name={gift.name}
                 description={gift.description ?? undefined}
                 price={

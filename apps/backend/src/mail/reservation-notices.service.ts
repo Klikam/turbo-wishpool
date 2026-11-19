@@ -1,7 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, isNotNull, type SQL } from 'drizzle-orm';
+import { eq, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { giftsTable, usersTable, wishlistsTable } from '../db/schema';
+import {
+  giftReservationsTable,
+  giftsTable,
+  usersTable,
+  wishlistsTable,
+} from '../db/schema';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import {
@@ -36,10 +41,14 @@ export class ReservationNoticeService {
         ownerName: owners.name,
       })
       .from(giftsTable)
-      .innerJoin(usersTable, eq(usersTable.id, giftsTable.reservedByUserId))
+      .innerJoin(
+        giftReservationsTable,
+        eq(giftReservationsTable.giftId, giftsTable.id),
+      )
+      .innerJoin(usersTable, eq(usersTable.id, giftReservationsTable.userId))
       .innerJoin(wishlistsTable, eq(wishlistsTable.id, giftsTable.wishlistId))
       .innerJoin(owners, eq(owners.id, wishlistsTable.userId))
-      .where(and(isNotNull(giftsTable.reservedAt), condition));
+      .where(condition);
   }
 
   /** Tells the reservers of an edited gift what changed. */

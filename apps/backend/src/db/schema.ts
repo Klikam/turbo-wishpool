@@ -9,9 +9,11 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const occasionEnum = pgEnum('occasion', [
   'birthday',
@@ -115,11 +117,63 @@ export const giftsTable = pgTable.withRLS(
     price: numeric({ precision: 10, scale: 2, mode: 'number' }),
     url: varchar({ length: 2048 }),
     imageUrl: varchar({ length: 2048 }),
-    reservedByUserId: integer().references(() => usersTable.id, {
-      onDelete: 'set null',
-    }),
-    reservedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index().on(table.wishlistId)],
+);
+
+// A gift is reserved when it has at least one row here. Several rows mean
+// the people are buying it together and split the price equally.
+export const giftReservationsTable = pgTable.withRLS(
+  'gift_reservations',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    giftId: uuid()
+      .notNull()
+      .references(() => giftsTable.id, { onDelete: 'cascade' }),
+    userId: integer()
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.giftId, table.userId), index().on(table.userId)],
+);
+
+export const giftRequestTypeEnum = pgEnum('gift_request_type', [
+  // "Please give this gift up so I can take it."
+  'release',
+  // "Let me chip in on this gift."
+  'share',
+]);
+
+export const giftRequestStatusEnum = pgEnum('gift_request_status', [
+  'pending',
+  'accepted',
+  'declined',
+]);
+
+// A request to the people holding a reservation. Answered requests stay as a
+// record; only a pending one blocks the requester from asking again.
+export const giftRequestsTable = pgTable.withRLS(
+  'gift_requests',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    giftId: uuid()
+      .notNull()
+      .references(() => giftsTable.id, { onDelete: 'cascade' }),
+    requesterId: integer()
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    type: giftRequestTypeEnum().notNull(),
+    status: giftRequestStatusEnum().notNull().default('pending'),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    respondedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    index().on(table.giftId),
+    index().on(table.requesterId),
+    uniqueIndex()
+      .on(table.giftId, table.requesterId)
+      .where(sql`${table.status} = 'pending'`),
+  ],
 );

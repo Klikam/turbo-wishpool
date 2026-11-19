@@ -41,3 +41,15 @@ export const reserveGift = fn<typeof actual.reserveGift>(ok).mockName(
 export const cancelReservation = fn<typeof actual.cancelReservation>(
   ok,
 ).mockName("cancelReservation");
+
+export const requestGift = fn<typeof actual.requestGift>(() =>
+  Promise.resolve({ ok: true, data: { id: "requests-1" } }),
+).mockName("requestGift");
+
+export const cancelGiftRequest = fn<typeof actual.cancelGiftRequest>(
+  ok,
+).mockName("cancelGiftRequest");
+
+export const respondToGiftRequest = fn<typeof actual.respondToGiftRequest>(
+  ok,
+).mockName("respondToGiftRequest");

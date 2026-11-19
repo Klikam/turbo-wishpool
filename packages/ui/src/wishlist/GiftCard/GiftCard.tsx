@@ -7,8 +7,22 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
+
+export type GiftRequestType = "release" | "share";
+
+export interface GiftReserver {
+  name: string;
+  isMe: boolean;
+}
+
+export interface IncomingGiftRequest {
+  id: string;
+  type: GiftRequestType;
+  requesterName: string;
+}
 
 interface GiftCardProps {
   name: string;
@@ -19,12 +33,25 @@ interface GiftCardProps {
   claimed: boolean;
   isOwner: boolean;
   isMine: boolean;
+  /** Everyone buying the gift, as shown to non-owners. */
+  reservers?: GiftReserver[];
+  /** Each buyer's share when several people split the price, e.g. "€ 49.67". */
+  pricePerPerson?: string;
+  /** What each would pay if the viewer joined, shown on "Ask to share". */
+  pricePerPersonIfJoined?: string;
+  /** The viewer's own request, waiting for an answer. */
+  myRequest?: { type: GiftRequestType } | null;
+  /** Requests the viewer, as a buyer, can accept or decline. */
+  incomingRequests?: IncomingGiftRequest[];
   /** This gift's reservation is being saved: shows a spinner. */
   busy?: boolean;
   /** Blocks the card's buttons, e.g. while another change is saving. */
   disabled?: boolean;
   onClaim: () => void;
   onUnclaim: () => void;
+  onRequest?: (type: GiftRequestType) => void;
+  onCancelRequest?: () => void;
+  onRespond?: (requestId: string, accept: boolean) => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -40,8 +67,16 @@ export function GiftCard({
   isMine,
   busy = false,
   disabled = false,
+  reservers = [],
+  pricePerPerson,
+  pricePerPersonIfJoined,
+  myRequest = null,
+  incomingRequests = [],
   onClaim,
   onUnclaim,
+  onRequest,
+  onCancelRequest,
+  onRespond,
   onEdit,
   onDelete,
 }: GiftCardProps) {
@@ -49,6 +84,18 @@ export function GiftCard({
   // to the placeholder too.
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = imageUrl && !imageFailed;
+
+  const others = reservers.filter((r) => !r.isMe).map((r) => r.name);
+  const shared = reservers.length > 1;
+  const claimedLabel = isOwner
+    ? "Someone is gifting this"
+    : isMine
+      ? others.length > 0
+        ? `You're gifting this with ${others.join(", ")}`
+        : "You're gifting this"
+      : others.length > 0
+        ? `Claimed by ${others.join(", ")}`
+        : "Already claimed";
 
   return (
     <div
@@ -87,14 +134,10 @@ export function GiftCard({
         </div>
         {claimed && (
           <div className="absolute inset-0 bg-primary/60 flex items-center justify-center">
-            <div className="flex items-center gap-2 bg-white/95 rounded-full px-4 py-2 shadow">
-              <Check className="w-4 h-4 text-[#C4797A]" />
-              <span className="text-xs font-semibold text-foreground">
-                {isOwner
-                  ? "Someone is gifting this"
-                  : isMine
-                    ? "You're gifting this"
-                    : "Already claimed"}
+            <div className="flex items-center gap-2 bg-white/95 rounded-2xl px-4 py-2 shadow max-w-[90%]">
+              <Check className="w-4 h-4 shrink-0 text-[#C4797A]" />
+              <span className="text-xs font-semibold text-foreground line-clamp-2">
+                {claimedLabel}
               </span>
             </div>
           </div>
@@ -140,6 +183,13 @@ export function GiftCard({
           </p>
         )}
 
+        {shared && pricePerPerson && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+            <Users className="w-3 h-3 shrink-0" />
+            Split {reservers.length} ways: {pricePerPerson} each
+          </p>
+        )}
+
         <div className="flex items-center gap-2">
           {url && (
             <a
@@ -175,10 +225,80 @@ export function GiftCard({
                   {busy && <Loader2 className="w-3 h-3 animate-spin" />}
                   Undo
                 </button>
+              ) : myRequest ? (
+                <button
+                  onClick={onCancelRequest}
+                  disabled={disabled}
+                  aria-busy={busy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-muted-foreground text-xs rounded-lg hover:text-foreground transition-colors font-medium disabled:opacity-60 disabled:pointer-events-none"
+                >
+                  {busy && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {myRequest.type === "release"
+                    ? "Asked to free it · Cancel"
+                    : "Asked to share · Cancel"}
+                </button>
+              ) : onRequest ? (
+                <div className="flex gap-1.5">
+                  {!shared && (
+                    <button
+                      onClick={() => onRequest("release")}
+                      disabled={disabled}
+                      title="Email the person who claimed it and ask them to free it for you"
+                      className="px-2.5 py-1.5 border border-border text-foreground text-xs rounded-lg hover:bg-secondary transition-colors font-medium disabled:opacity-60 disabled:pointer-events-none"
+                    >
+                      Ask to free
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onRequest("share")}
+                    disabled={disabled}
+                    title={
+                      pricePerPersonIfJoined
+                        ? `Buy it together: ${pricePerPersonIfJoined} each`
+                        : "Buy it together"
+                    }
+                    className="px-2.5 py-1.5 border border-border text-foreground text-xs rounded-lg hover:bg-secondary transition-colors font-medium disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    {pricePerPersonIfJoined
+                      ? `Ask to share · ${pricePerPersonIfJoined} each`
+                      : "Ask to share"}
+                  </button>
+                </div>
               ) : null}
             </div>
           )}
         </div>
+
+        {!isOwner && isMine && incomingRequests.length > 0 && (
+          <ul className="mt-3 space-y-2 border-t border-border pt-3">
+            {incomingRequests.map((request) => (
+              <li key={request.id} className="text-xs text-foreground">
+                <p className="mb-1.5 leading-snug">
+                  <strong>{request.requesterName}</strong>{" "}
+                  {request.type === "release"
+                    ? "asks you to free this gift"
+                    : "asks to share this gift with you"}
+                </p>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => onRespond?.(request.id, true)}
+                    disabled={disabled}
+                    className="px-2.5 py-1 bg-primary text-primary-foreground text-xs rounded-lg font-medium hover:bg-[#3a1232] transition-colors disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => onRespond?.(request.id, false)}
+                    disabled={disabled}
+                    className="px-2.5 py-1 border border-border text-xs rounded-lg font-medium hover:bg-secondary transition-colors disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

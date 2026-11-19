@@ -17,6 +17,9 @@ export const mockGift = (overrides: Partial<GiftItem> = {}): GiftItem => ({
   imageUrl: null,
   reserved: false,
   reservedByMe: false,
+  reservers: [],
+  myRequest: null,
+  incomingRequests: [],
   ...overrides,
 });
 
@@ -30,6 +33,7 @@ export const mockGifts: GiftItem[] = [
     url: null,
     reserved: true,
     reservedByMe: false,
+    reservers: [{ name: 'Oliver Grant', isMe: false }],
   }),
   mockGift({
     id: 'gifts-3',

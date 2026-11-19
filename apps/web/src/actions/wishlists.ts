@@ -1,6 +1,7 @@
 "use server";
 
 import { verifySession } from "@/lib/dal";
+import type { GiftRequestType } from "@/types/giftItem";
 import type {
   Occasion,
   Wishlist,
@@ -187,6 +188,58 @@ export async function cancelReservation(wishlistId: string, giftId: string) {
       `public/wishlists/${wishlistId}/gifts/${giftId}/reservation`,
       accessToken,
       { method: "DELETE" },
+    ),
+  );
+}
+
+/** Asks whoever reserved the gift to free it (`release`) or share it (`share`). */
+export async function requestGift(
+  wishlistId: string,
+  giftId: string,
+  type: GiftRequestType,
+) {
+  const { accessToken } = await verifySession();
+
+  return toResult(() =>
+    api<{ id: string }>(
+      `public/wishlists/${wishlistId}/gifts/${giftId}/requests`,
+      accessToken,
+      { method: "POST", body: { type } },
+    ),
+  );
+}
+
+/** Takes back the viewer's own pending request. */
+export async function cancelGiftRequest(
+  wishlistId: string,
+  giftId: string,
+  requestId: string,
+) {
+  const { accessToken } = await verifySession();
+
+  return toResult(() =>
+    api<void>(
+      `public/wishlists/${wishlistId}/gifts/${giftId}/requests/${requestId}`,
+      accessToken,
+      { method: "DELETE" },
+    ),
+  );
+}
+
+/** A reserver accepts or declines a request; the asker is emailed the answer. */
+export async function respondToGiftRequest(
+  wishlistId: string,
+  giftId: string,
+  requestId: string,
+  accept: boolean,
+) {
+  const { accessToken } = await verifySession();
+
+  return toResult(() =>
+    api<void>(
+      `public/wishlists/${wishlistId}/gifts/${giftId}/requests/${requestId}`,
+      accessToken,
+      { method: "PUT", body: { accept } },
     ),
   );
 }
