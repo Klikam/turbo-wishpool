@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import CreateWishlist from '@/components/pages/CreateWishlist';
+import WishlistForm from '@/components/pages/WishlistForm';
 import { verifySession } from '@/lib/dal';
 import { currencyFromAcceptLanguage } from '@/utils/currency';
 
@@ -12,5 +12,5 @@ export default async function CreatePage() {
     (await headers()).get('accept-language'),
   );
 
-  return <CreateWishlist defaultCurrency={defaultCurrency} />;
+  return <WishlistForm mode="create" defaultCurrency={defaultCurrency} />;
 }

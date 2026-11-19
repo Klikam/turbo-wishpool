@@ -8,13 +8,15 @@ import {
 import { NEXT_PARAM } from "@/utils/redirectHelper";
 
 const protectedRoutes = ["/dashboard", "/create"];
+// The wishlist page itself is public; editing it is not.
+const EDIT_WISHLIST_ROUTE = /^\/wishlist\/[^/]+\/edit\/?$/;
 
 // Only checks that a session cookie exists; the session itself is validated
 // against the backend by `verifySession` in the page.
 export function proxy(req: NextRequest) {
-  const isProtected = protectedRoutes.some((route) =>
-    req.nextUrl.pathname.startsWith(route),
-  );
+  const isProtected =
+    protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route)) ||
+    EDIT_WISHLIST_ROUTE.test(req.nextUrl.pathname);
 
   if (isProtected && !getSessionCookie(req)) {
     const home = new URL("/", req.nextUrl);

@@ -1,7 +1,7 @@
 "use client";
 
-import { createWishlist } from "@/actions/wishlists";
-import { OCCASION_LABELS, type Occasion } from "@/types/wishlist";
+import { createWishlist, updateWishlist } from "@/actions/wishlists";
+import { OCCASION_LABELS, type Occasion, type Wishlist } from "@/types/wishlist";
 import { CURRENCIES, currencyLabel } from "@/utils/currency";
 import { emptyToNull } from "@/utils/giftHelper";
 import {
@@ -27,7 +27,7 @@ function occasionFromLabel(label: string): Occasion {
   return (entry?.[0] as Occasion | undefined) ?? "other";
 }
 
-interface NewWishlist {
+interface WishlistFormValues {
   title: string;
   occasion: Occasion;
   date: string;
@@ -35,36 +35,54 @@ interface NewWishlist {
   currency: string;
 }
 
-interface CreateWishlistProps {
-  /** Pre-selected currency, guessed from the owner's language. */
-  defaultCurrency: string;
-}
+type WishlistFormProps =
+  | {
+      mode: "create";
+      /** Pre-selected currency, guessed from the owner's language. */
+      defaultCurrency: string;
+    }
+  | { mode: "edit"; wishlist: Wishlist };
 
-export default function CreateWishlist({
-  defaultCurrency,
-}: CreateWishlistProps) {
+/** Creates a wishlist, or edits an existing one. */
+export default function WishlistForm(props: WishlistFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  const [form, setForm] = useState<NewWishlist>({
-    title: "",
-    occasion: "birthday",
-    date: "",
-    description: "",
-    currency: defaultCurrency,
-  });
+  const editing = props.mode === "edit" ? props.wishlist : null;
+  const backTo = editing ? `/wishlist/${editing.id}` : "/dashboard";
 
-  async function handleCreate() {
+  const [form, setForm] = useState<WishlistFormValues>(
+    props.mode === "edit"
+      ? {
+          title: props.wishlist.title,
+          occasion: props.wishlist.occasion ?? "other",
+          date: props.wishlist.date ?? "",
+          description: props.wishlist.note ?? "",
+          currency: props.wishlist.currency,
+        }
+      : {
+          title: "",
+          occasion: "birthday",
+          date: "",
+          description: "",
+          currency: props.defaultCurrency,
+        },
+  );
+
+  async function handleSubmit() {
     if (!form.title.trim() || submitting) return;
 
     setSubmitting(true);
-    const result = await createWishlist({
+    const input = {
       title: form.title.trim(),
       occasion: form.occasion,
       date: emptyToNull(form.date),
       note: emptyToNull(form.description),
       currency: form.currency,
-    });
+    };
+    const result = editing
+      ? await updateWishlist(editing.id, input)
+      : await createWishlist(input);
 
     if (!result.ok) {
       toast.error(result.error);
@@ -81,16 +99,18 @@ export default function CreateWishlist({
         <div className="mb-6">
           <BackButton
             onClick={() => {
-              router.push("/dashboard");
+              router.push(backTo);
             }}
           />
         </div>
 
         <h1 className="font-heading text-3xl font-semibold text-foreground mb-1">
-          New wishlist
+          {editing ? "Edit wishlist" : "New wishlist"}
         </h1>
         <p className="text-muted-foreground text-sm mb-8">
-          Create your list and share the link with friends and family.
+          {editing
+            ? "Changes show up for everyone who has the link."
+            : "Create your list and share the link with friends and family."}
         </p>
 
         <div className="flex flex-col gap-4">
@@ -120,14 +140,21 @@ export default function CreateWishlist({
             }}
           />
 
-          <SelectField
-            label="Currency of gift prices"
-            value={form.currency}
-            options={currencyOptions}
-            onChange={(currency) => {
-              setForm({ ...form, currency });
-            }}
-          />
+          <div>
+            <SelectField
+              label="Currency of gift prices"
+              value={form.currency}
+              options={currencyOptions}
+              onChange={(currency) => {
+                setForm({ ...form, currency });
+              }}
+            />
+            {editing && form.currency !== editing.currency && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Prices keep their amounts and aren&apos;t converted.
+              </p>
+            )}
+          </div>
 
           <TextareaField
             label="A note for your guests"
@@ -139,11 +166,11 @@ export default function CreateWishlist({
           />
 
           <button
-            onClick={() => void handleCreate()}
+            onClick={() => void handleSubmit()}
             disabled={!form.title.trim() || submitting}
             className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-[#3a1232] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Create wishlist
+            {editing ? "Save changes" : "Create wishlist"}
           </button>
         </div>
       </div>

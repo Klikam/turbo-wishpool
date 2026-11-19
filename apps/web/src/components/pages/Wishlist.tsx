@@ -29,7 +29,8 @@ import {
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
-import { LogIn, Plus, ShoppingBag } from "lucide-react";
+import { LogIn, Pencil, Plus, ShoppingBag } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -202,6 +203,17 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
                 <LogIn className="w-3.5 h-3.5" />
                 Sign in
               </button>
+            )}
+            {isOwner && (
+              <Link
+                href={`/wishlist/${wishlistId}/edit`}
+                aria-label="Edit list"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:bg-secondary transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                {/* Icon only on phones, to keep the header on one line. */}
+                <span className="hidden sm:inline">Edit list</span>
+              </Link>
             )}
             {isOwner && (
               <button

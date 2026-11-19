@@ -55,6 +55,21 @@ export async function createWishlist(input: NewWishlistInput) {
   );
 }
 
+/** Saves every field; empty ones (null) are cleared. */
+export async function updateWishlist(
+  wishlistId: string,
+  input: NewWishlistInput,
+) {
+  const { accessToken } = await verifySession();
+
+  return toResult(() =>
+    api<{ id: string }>(`wishlists/${wishlistId}`, accessToken, {
+      method: "PATCH",
+      body: input,
+    }),
+  );
+}
+
 export async function deleteWishlist(wishlistId: string) {
   const { accessToken } = await verifySession();
 
