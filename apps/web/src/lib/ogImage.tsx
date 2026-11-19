@@ -44,7 +44,29 @@ async function loadFont(
   }
 }
 
-export async function ogCard({ eyebrow, title, subtitle }: OgCardProps) {
+// About three lines at the smallest title size; titles may be up to 255.
+const MAX_TITLE_LENGTH = 100;
+
+/** Shortens `text` at a word boundary, with an ellipsis. */
+function shorten(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text;
+  const cut = text.slice(0, maxLength - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > maxLength / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:—-]+$/, "")}…`;
+}
+
+function titleFontSize(title: string) {
+  if (title.length <= 40) return 84;
+  if (title.length <= 70) return 64;
+  return 52;
+}
+
+export async function ogCard({
+  eyebrow,
+  title: fullTitle,
+  subtitle,
+}: OgCardProps) {
+  const title = shorten(fullTitle, MAX_TITLE_LENGTH);
   const [headingFont, bodyFont] = await Promise.all([
     loadFont("Playfair Display", 600, `Wishpool${title}`),
     // The eyebrow is drawn in capitals.
@@ -139,7 +161,7 @@ export async function ogCard({ eyebrow, title, subtitle }: OgCardProps) {
           )}
           <span
             style={{
-              fontSize: title.length > 40 ? 64 : 84,
+              fontSize: titleFontSize(title),
               fontFamily: headingFamily,
               lineHeight: 1.1,
               maxWidth: 1000,
