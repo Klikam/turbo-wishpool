@@ -63,10 +63,15 @@ export function WishlistHero({
         </div>
       </div>
       {isOwner && (
-        <div className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-[#4A1942]/8 border border-[#4A1942]/20 rounded-lg text-xs text-primary">
-          <Eye className="w-3.5 h-3.5" />
-          You can see your gifts but <strong>not who is claiming them</strong>{" "}
-          — the surprise is safe.
+        <div className="mt-4 inline-flex items-start gap-2 px-3 py-2 bg-[#4A1942]/8 border border-[#4A1942]/20 rounded-lg text-xs text-primary">
+          <Eye className="w-3.5 h-3.5 shrink-0 mt-px" />
+          {/* Anyone with the link sees which gifts are taken (that's what
+              prevents duplicates), the owner too when signed out. */}
+          <span>
+            <strong>Taken gifts are hidden from you</strong>, and nobody can
+            see who took them. Opening your link signed out would show
+            what&apos;s taken — so don&apos;t peek.
+          </span>
         </div>
       )}
     </div>
