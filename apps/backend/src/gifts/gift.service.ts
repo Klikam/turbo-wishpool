@@ -6,6 +6,7 @@ import { giftsTable, wishlistsTable } from '../db/schema';
 import { CreateGiftDto } from './dto/create-gift.dto';
 import { UpdateGiftDto } from './dto/update-gift.dto';
 import { giftsOrder, ownerGiftColumns } from './gift.columns';
+import { ReservationNoticeService } from '../mail/reservation-notices.service';
 import { LinkPreviewService } from './link-preview.service';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class GiftService {
     @Inject(DrizzleAsyncProvider)
     private db: Database,
     private linkPreview: LinkPreviewService,
+    private reservationNotices: ReservationNoticeService,
   ) {}
 
   async create(userId: number, wishlistId: string, dto: CreateGiftDto) {
@@ -67,13 +69,39 @@ export class GiftService {
 
     await this.assertWishlistOwner(userId, wishlistId);
 
+    const matchesGift = and(
+      eq(giftsTable.id, id),
+      eq(giftsTable.wishlistId, wishlistId),
+    );
+    // The owner can't see reservations, so the reserver is told of changes.
+    const [before] = await this.db
+      .select(ownerGiftColumns)
+      .from(giftsTable)
+      .where(matchesGift);
+    const reservations =
+      await this.reservationNotices.findReservations(matchesGift);
+
     const [gift] = await this.db
       .update(giftsTable)
       .set(dto)
-      .where(and(eq(giftsTable.id, id), eq(giftsTable.wishlistId, wishlistId)))
+      .where(matchesGift)
       .returning(ownerGiftColumns);
 
     if (!gift) throw new NotFoundException('Gift not found');
+
+    if (before && reservations.length > 0) {
+      const labels = {
+        name: 'name',
+        description: 'description',
+        price: 'price',
+        url: 'link',
+        imageUrl: 'picture',
+      } as const;
+      const changes = (Object.keys(labels) as (keyof typeof labels)[])
+        .filter((field) => before[field] !== gift[field])
+        .map((field) => labels[field]);
+      this.reservationNotices.notifyEdited(reservations, gift.name, changes);
+    }
 
     // E.g. a new link, or the image removed to take it from the link again.
     const linkOrImageChanged =
@@ -88,12 +116,22 @@ export class GiftService {
   async remove(userId: number, wishlistId: string, id: string) {
     await this.assertWishlistOwner(userId, wishlistId);
 
+    const matchesGift = and(
+      eq(giftsTable.id, id),
+      eq(giftsTable.wishlistId, wishlistId),
+    );
+    // The owner can't see reservations, so the reserver is told instead.
+    const reservations =
+      await this.reservationNotices.findReservations(matchesGift);
+
     const deleted = await this.db
       .delete(giftsTable)
-      .where(and(eq(giftsTable.id, id), eq(giftsTable.wishlistId, wishlistId)))
+      .where(matchesGift)
       .returning({ id: giftsTable.id });
 
     if (deleted.length === 0) throw new NotFoundException('Gift not found');
+
+    this.reservationNotices.notifyRemoved(reservations);
   }
 
   /**

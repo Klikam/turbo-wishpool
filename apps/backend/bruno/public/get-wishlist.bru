@@ -7,14 +7,13 @@ meta {
 get {
   url: {{baseUrl}}/public/wishlists/{{wishlistId}}
   body: none
-  auth: none
+  auth: bearer
 }
 
-headers {
-  x-guest-token: {{guestToken}}
-  ~Authorization: Bearer {{accessToken}}
+auth:bearer {
+  token: {{accessToken}}
 }
 
 docs {
-  Optional viewer identity: `x-guest-token` (16-128 chars) or a Bearer access token (enable the disabled header).
+  Requires a signed-in user. Gifts are shown from their point of view; the list's owner never sees reservations.
 }

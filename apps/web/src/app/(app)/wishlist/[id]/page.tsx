@@ -1,17 +1,20 @@
-import { adoptGuestReservations, getPublicWishlist } from '@/actions/wishlists';
+import { getPublicWishlist, getWishlistPreview } from '@/actions/wishlists';
 import Wishlist from '@/components/pages/Wishlist';
+import WishlistSignIn from '@/components/pages/WishlistSignIn';
 import { getOptionalSession } from '@/lib/dal';
 import { siteOpenGraph } from '@/lib/ogImage';
 import { wishlistPreview } from '@/utils/wishlistPreview';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+// Link-preview bots can't sign in, so the metadata comes from the preview,
+// which has no gifts.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const wishlist = await getPublicWishlist((await params).id);
+  const wishlist = await getWishlistPreview((await params).id);
   if (!wishlist) return {};
 
   const { title, description } = wishlistPreview(wishlist);
@@ -29,20 +32,18 @@ export default async function WishlistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getOptionalSession();
 
-  // Claims made before signing in (e.g. via the sign-in dialog here) become
-  // the account's, so they still show as "You're gifting this".
-  if (session) {
-    try {
-      await adoptGuestReservations();
-    } catch (e) {
-      console.error(e);
-    }
+  // Gifts are for signed-in users only. Not a redirect from the proxy: the
+  // metadata above has to stay reachable for link-preview bots.
+  if (!(await getOptionalSession())) {
+    const preview = await getWishlistPreview(id);
+    if (!preview) notFound();
+
+    return <WishlistSignIn wishlist={preview} />;
   }
 
   const wishlist = await getPublicWishlist(id);
   if (!wishlist) notFound();
 
-  return <Wishlist wishlist={wishlist} isSignedIn={session !== null} />;
+  return <Wishlist wishlist={wishlist} />;
 }

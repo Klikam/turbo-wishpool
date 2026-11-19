@@ -3,7 +3,7 @@ import z from 'zod';
 /**
  * A gift as returned by `GET /public/wishlists/:id` (apps/backend/src/public).
  * Reservation fields are relative to the viewer: `reservedByMe` is true when
- * the current user or guest token holds the reservation.
+ * the current user holds the reservation.
  */
 export const GiftItemSchema = z.object({
   id: z.string(),

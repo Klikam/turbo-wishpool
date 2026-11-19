@@ -4,6 +4,7 @@ import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, wishlistsTable } from '../db/schema';
 import { giftsOrder, ownerGiftColumns } from '../gifts/gift.columns';
+import { ReservationNoticeService } from '../mail/reservation-notices.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 
@@ -12,6 +13,7 @@ export class WishlistService {
   constructor(
     @Inject(DrizzleAsyncProvider)
     private db: Database,
+    private reservationNotices: ReservationNoticeService,
   ) {}
 
   async create(userId: number, dto: CreateWishlistDto) {
@@ -73,11 +75,25 @@ export class WishlistService {
   }
 
   async remove(userId: number, id: string) {
+    // The owner can't see reservations, so the reservers are told instead.
+    // Only a list the user owns is looked at.
+    const [owned] = await this.db
+      .select({ id: wishlistsTable.id })
+      .from(wishlistsTable)
+      .where(and(eq(wishlistsTable.id, id), eq(wishlistsTable.userId, userId)));
+    const reservations = owned
+      ? await this.reservationNotices.findReservations(
+          eq(giftsTable.wishlistId, id),
+        )
+      : [];
+
     const deleted = await this.db
       .delete(wishlistsTable)
       .where(and(eq(wishlistsTable.id, id), eq(wishlistsTable.userId, userId)))
       .returning({ id: wishlistsTable.id });
 
     if (deleted.length === 0) throw new NotFoundException('Wishlist not found');
+
+    this.reservationNotices.notifyRemoved(reservations);
   }
 }

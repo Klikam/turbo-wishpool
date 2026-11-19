@@ -4,7 +4,7 @@ import Wishlist from './Wishlist';
 
 /**
  * The page loads the wishlist on the server and passes it in. The backend
- * decides owner vs. guest (`isOwner`), so each story picks a view by the
+ * decides owner vs. another signed-in user (`isOwner`), so each story picks a view by the
  * wishlist it passes.
  */
 const meta: Meta<typeof Wishlist> = {
@@ -12,7 +12,6 @@ const meta: Meta<typeof Wishlist> = {
   component: Wishlist,
   args: {
     wishlist: mockWishlist(),
-    isSignedIn: true,
   },
 };
 
@@ -28,19 +27,8 @@ export const AsOwner: Story = {
   },
 };
 
-export const AsGuest: Story = {
+export const AsFriend: Story = {
   args: { wishlist: mockWishlist({ isOwner: false }) },
-};
-
-export const AsAnonymousVisitor: Story = {
-  args: { wishlist: mockWishlist({ isOwner: false }), isSignedIn: false },
-  parameters: {
-    docs: {
-      description: {
-        story: 'A shared link opened by someone who never signed in.',
-      },
-    },
-  },
 };
 
 export const NoGiftsYet: Story = {

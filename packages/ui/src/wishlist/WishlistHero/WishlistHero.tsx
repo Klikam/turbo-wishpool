@@ -56,7 +56,7 @@ export function WishlistHero({
             </span>
             {!isOwner && (
               <span className="flex items-center gap-1">
-                <EyeOff className="w-3 h-3" /> Selections are anonymous
+                <EyeOff className="w-3 h-3" /> {"The owner can't see what's claimed"}
               </span>
             )}
           </div>
@@ -65,12 +65,12 @@ export function WishlistHero({
       {isOwner && (
         <div className="mt-4 inline-flex items-start gap-2 px-3 py-2 bg-[#4A1942]/8 border border-[#4A1942]/20 rounded-lg text-xs text-primary">
           <Eye className="w-3.5 h-3.5 shrink-0 mt-px" />
-          {/* Anyone with the link sees which gifts are taken (that's what
-              prevents duplicates), the owner too when signed out. */}
+          {/* Only signed-in users see the gifts, and the backend never
+              tells the owner which are taken. */}
           <span>
-            <strong>Taken gifts are hidden from you</strong>, and nobody can
-            see who took them. Opening your link signed out would show
-            what&apos;s taken — so don&apos;t peek.
+            <strong>You can&apos;t see what&apos;s been claimed</strong>, or by
+            whom — so the gifts stay a surprise. If you change or delete a gift
+            someone already claimed, they&apos;ll be emailed.
           </span>
         </div>
       )}

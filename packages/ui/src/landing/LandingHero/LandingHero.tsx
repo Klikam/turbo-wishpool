@@ -27,8 +27,8 @@ export function LandingHero() {
           love to receive.
         </h1>
         <p className="text-white/60 text-base lg:text-lg max-w-sm leading-relaxed">
-          Create a wishlist for any occasion. Friends pick gifts anonymously —
-          no duplicates, no awkward reveals.
+          Create a wishlist for any occasion. Friends sign in and pick gifts —
+          no duplicates, no spoiled surprises.
         </p>
       </div>
 
@@ -36,7 +36,7 @@ export function LandingHero() {
         <FeatureItem icon={<Star />} label="No duplicate gifts — ever" />
         <FeatureItem
           icon={<EyeOff />}
-          label="Surprise stays safe — owner can't see who picks what"
+          label="Surprise stays safe — owner can't see what's been picked"
         />
         <FeatureItem icon={<Users />} label="Share with one link" />
       </div>

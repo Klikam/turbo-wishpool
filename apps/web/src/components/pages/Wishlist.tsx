@@ -8,7 +8,6 @@ import {
   updateGift,
 } from "@/actions/wishlists";
 import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
-import { SignInModal } from "@/components/sections/SignInModal";
 import type { GiftItem } from "@/types/giftItem";
 import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import type { ActionResult } from "@/utils/actionResult";
@@ -27,7 +26,7 @@ import {
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
-import { LogIn, Pencil, Plus, ShoppingBag } from "lucide-react";
+import { Pencil, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
@@ -35,7 +34,6 @@ import { toast } from "sonner";
 
 interface WishlistViewProps {
   wishlist: Wishlist;
-  isSignedIn: boolean;
 }
 
 // Just over the backend's 5 s limit for fetching a gift link's preview image.
@@ -52,7 +50,7 @@ function toFormValues(gift: GiftItem): GiftFormValues {
   };
 }
 
-export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
+export default function Wishlist({ wishlist }: WishlistViewProps) {
   const router = useRouter();
   const wishlistId = wishlist.id;
 
@@ -61,7 +59,6 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
     null,
   );
   const [giftDialogError, setGiftDialogError] = useState<string>();
-  const [showSignIn, setShowSignIn] = useState(false);
   // Kept after the dialog closes so its text doesn't change while it fades out.
   const [giftToDelete, setGiftToDelete] = useState<GiftItem | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -81,7 +78,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   const isOwner = wishlist.isOwner;
 
   function goBack() {
-    router.push(isSignedIn ? "/dashboard" : "/");
+    router.push("/dashboard");
   }
 
   /** Runs a mutation, reports a failure, then re-syncs with the backend. */
@@ -176,17 +173,6 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
               url={`${typeof window === "undefined" ? "" : window.location.origin}/wishlist/${wishlistId}`}
               title={wishlist.title}
             />
-            {!isSignedIn && (
-              <button
-                onClick={() => {
-                  setShowSignIn(true);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-[#3a1232] transition-colors"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                Sign in
-              </button>
-            )}
             {isOwner && (
               <Link
                 href={`/wishlist/${wishlistId}/edit`}
@@ -287,7 +273,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
       <ConfirmDeleteDialog
         open={confirmingDelete}
         title={`Delete “${giftToDelete?.name ?? ""}”?`}
-        description="The gift will be removed from your wishlist for good."
+        description="The gift will be removed from your wishlist for good. If someone has already claimed it, they'll be emailed that it's gone."
         onConfirm={() => {
           if (giftToDelete) handleDelete(giftToDelete.id);
         }}
@@ -295,15 +281,6 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
           setConfirmingDelete(false);
         }}
       />
-
-      {showSignIn && (
-        <SignInModal
-          callbackURL={`/wishlist/${wishlistId}`}
-          onClose={() => {
-            setShowSignIn(false);
-          }}
-        />
-      )}
     </div>
   );
 }

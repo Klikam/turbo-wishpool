@@ -1,14 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
-import {
-  GUEST_TOKEN_COOKIE,
-  GUEST_TOKEN_MAX_AGE,
-  generateGuestToken,
-} from "@/lib/guestToken";
 import { NEXT_PARAM } from "@/utils/redirectHelper";
 
 const protectedRoutes = ["/dashboard", "/create", "/account"];
-// The wishlist page itself is public; editing it is not.
+// The wishlist page itself isn't redirected: link-preview bots must reach its
+// metadata, and it asks signed-out visitors to sign in itself.
 const EDIT_WISHLIST_ROUTE = /^\/wishlist\/[^/]+\/edit\/?$/;
 
 // Only checks that a session cookie exists; the session itself is validated
@@ -34,33 +30,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(home);
   }
 
-  if (
-    req.nextUrl.pathname.startsWith("/wishlist/") &&
-    !req.cookies.has(GUEST_TOKEN_COOKIE)
-  ) {
-    return withGuestToken(req);
-  }
-
   return NextResponse.next();
-}
-
-/**
- * Gives a first-time visitor a guest token, visible to the page rendering
- * this same request as well as stored in the browser.
- */
-function withGuestToken(req: NextRequest) {
-  const token = generateGuestToken();
-  req.cookies.set(GUEST_TOKEN_COOKIE, token);
-
-  const res = NextResponse.next({ request: { headers: req.headers } });
-  res.cookies.set(GUEST_TOKEN_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: GUEST_TOKEN_MAX_AGE,
-  });
-  return res;
 }
 
 export const config = {

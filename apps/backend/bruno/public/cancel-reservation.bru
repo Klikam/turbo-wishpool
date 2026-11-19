@@ -7,10 +7,9 @@ meta {
 delete {
   url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/reservation
   body: none
-  auth: none
+  auth: bearer
 }
 
-headers {
-  x-guest-token: {{guestToken}}
-  ~Authorization: Bearer {{accessToken}}
+auth:bearer {
+  token: {{accessToken}}
 }

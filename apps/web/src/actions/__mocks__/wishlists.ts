@@ -38,10 +38,6 @@ export const reserveGift = fn<typeof actual.reserveGift>(ok).mockName(
   "reserveGift",
 );
 
-export const adoptGuestReservations = fn<
-  typeof actual.adoptGuestReservations
->(() => Promise.resolve()).mockName("adoptGuestReservations");
-
 export const cancelReservation = fn<typeof actual.cancelReservation>(
   ok,
 ).mockName("cancelReservation");

@@ -1,0 +1,15 @@
+meta {
+  name: preview
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}/preview
+  body: none
+  auth: none
+}
+
+docs {
+  No sign-in needed: title, occasion, date and owner name, but no gifts. Used for link previews.
+}

@@ -6,17 +6,10 @@ meta {
 
 put {
   url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/reservation
-  body: json
-  auth: none
+  body: none
+  auth: bearer
 }
 
-headers {
-  x-guest-token: {{guestToken}}
-  ~Authorization: Bearer {{accessToken}}
-}
-
-body:json {
-  {
-    "name": "Anna"
-  }
+auth:bearer {
+  token: {{accessToken}}
 }

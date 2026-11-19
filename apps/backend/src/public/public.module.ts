@@ -3,7 +3,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { PublicService } from './public.service';
 import { PublicController } from './public.controller';
-import { GuestReservationsController } from './guest-reservations.controller';
 
 @Module({
   imports: [
@@ -12,7 +11,7 @@ import { GuestReservationsController } from './guest-reservations.controller';
     // too few for a script claiming every gift on a list.
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
   ],
-  controllers: [PublicController, GuestReservationsController],
+  controllers: [PublicController],
   providers: [PublicService],
 })
 export class PublicModule {}

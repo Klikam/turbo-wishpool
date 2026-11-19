@@ -1,4 +1,3 @@
-import { isNotNull } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -119,15 +118,8 @@ export const giftsTable = pgTable.withRLS(
     reservedByUserId: integer().references(() => usersTable.id, {
       onDelete: 'set null',
     }),
-    reservedByGuestTokenHash: varchar({ length: 64 }),
     reservedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    index().on(table.wishlistId),
-    // Only guest reservations have a hash; looked up when a guest signs in.
-    index()
-      .on(table.reservedByGuestTokenHash)
-      .where(isNotNull(table.reservedByGuestTokenHash)),
-  ],
+  (table) => [index().on(table.wishlistId)],
 );

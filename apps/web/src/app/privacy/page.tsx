@@ -29,9 +29,9 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Reservations:</strong> which gifts are taken, and by which
-            account or browser, so only that person can undo it. We don&apos;t
-            store who reserved a gift by name, and nobody, including the
-            wishlist owner, can see it.
+            account, so only that person can undo it. Wishlist owners can&apos;t
+            see which gifts are taken or by whom. If an owner changes or deletes a
+            gift (or deletes a list) you reserved, we email you about it.
           </li>
         </ul>
       </section>
@@ -42,14 +42,9 @@ export default function PrivacyPage() {
           <li>
             <strong>Session cookie:</strong> keeps you signed in.
           </li>
-          <li>
-            <strong>Guest cookie</strong> (<code>wishpool_guest_token</code>):
-            set when you open a wishlist, so you can undo reservations you made
-            without an account. It lasts a year.
-          </li>
         </ul>
         <p className="mt-2">
-          Both are needed for the site to work. We don&apos;t use analytics or
+          It is needed for the site to work. We don&apos;t use analytics or
           advertising cookies.
         </p>
       </section>
@@ -58,8 +53,13 @@ export default function PrivacyPage() {
         <h2>Who else is involved</h2>
         <ul>
           <li>Our hosting and database providers, who store the data above.</li>
-          <li>Our email provider, which sends verification emails.</li>
+          <li>Our email provider, which sends verification emails and notices that a gift you reserved was removed.</li>
           <li>Google or Facebook, if you sign in with them.</li>
+          <li>
+            Link-preview services (chat apps) that fetch a shared wishlist
+            link see only its title, occasion, date and owner&apos;s name,
+            never the gifts.
+          </li>
           <li>
             Shops whose links you add: we fetch the linked page once to find a
             picture of the gift.

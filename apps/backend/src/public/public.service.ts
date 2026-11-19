@@ -1,24 +1,17 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, isNull, notInArray } from 'drizzle-orm';
-import { createHash } from 'node:crypto';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import { giftsTable, usersTable, wishlistsTable } from '../db/schema';
 import { giftsOrder } from '../gifts/gift.columns';
 
-export type Viewer = { userId: number } | { guestTokenHash: string } | null;
-
 type GiftRow = typeof giftsTable.$inferSelect;
-
-const MIN_GUEST_TOKEN_LENGTH = 16;
-const MAX_GUEST_TOKEN_LENGTH = 128;
 
 @Injectable()
 export class PublicService {
@@ -27,45 +20,29 @@ export class PublicService {
     private db: Database,
   ) {}
 
-  resolveViewer(
-    userId: number | undefined,
-    guestToken: string | undefined,
-  ): Viewer {
-    if (userId !== undefined) return { userId };
-    if (!guestToken) return null;
-
-    return { guestTokenHash: this.hashGuestToken(guestToken) };
-  }
-
   /**
-   * Moves the reservations made in this browser as a guest onto the account
-   * that just signed in, so they show as `reservedByMe` and can be undone.
-   * Reservations on the user's own wishlists stay as they were: owners can't
-   * reserve their own gifts.
+   * The wishlist without its gifts, for anyone with the link. Link-preview
+   * bots and signed-out visitors see only this.
    */
-  async adoptGuestReservations(userId: number, guestToken: string) {
-    const guestTokenHash = this.hashGuestToken(guestToken);
-
-    const ownWishlists = this.db
-      .select({ id: wishlistsTable.id })
+  async getPreview(wishlistId: string) {
+    const [wishlist] = await this.db
+      .select({
+        id: wishlistsTable.id,
+        title: wishlistsTable.title,
+        occasion: wishlistsTable.occasion,
+        date: wishlistsTable.date,
+        ownerName: usersTable.name,
+      })
       .from(wishlistsTable)
-      .where(eq(wishlistsTable.userId, userId));
+      .innerJoin(usersTable, eq(usersTable.id, wishlistsTable.userId))
+      .where(eq(wishlistsTable.id, wishlistId));
 
-    const adopted = await this.db
-      .update(giftsTable)
-      .set({ reservedByUserId: userId, reservedByGuestTokenHash: null })
-      .where(
-        and(
-          eq(giftsTable.reservedByGuestTokenHash, guestTokenHash),
-          notInArray(giftsTable.wishlistId, ownWishlists),
-        ),
-      )
-      .returning({ id: giftsTable.id });
+    if (!wishlist) throw new NotFoundException('Wishlist not found');
 
-    return { adopted: adopted.length };
+    return wishlist;
   }
 
-  async getWishlist(wishlistId: string, viewer: Viewer) {
+  async getWishlist(wishlistId: string, userId: number) {
     const [wishlist] = await this.db
       .select({
         id: wishlistsTable.id,
@@ -90,8 +67,7 @@ export class PublicService {
       .orderBy(...giftsOrder);
 
     const { ownerId, ...publicWishlist } = wishlist;
-    const isOwner =
-      viewer !== null && 'userId' in viewer && viewer.userId === ownerId;
+    const isOwner = userId === ownerId;
 
     // Owners must not see reservations on their own list (surprise).
     return {
@@ -100,13 +76,13 @@ export class PublicService {
       gifts: gifts.map((gift) =>
         this.toPublicGift(
           isOwner ? this.withoutReservation(gift) : gift,
-          viewer,
+          userId,
         ),
       ),
     };
   }
 
-  async reserve(wishlistId: string, giftId: string, viewer: Viewer) {
+  async reserve(wishlistId: string, giftId: string, userId: number) {
     const [wishlist] = await this.db
       .select({ userId: wishlistsTable.userId })
       .from(wishlistsTable)
@@ -114,32 +90,14 @@ export class PublicService {
 
     if (!wishlist) throw new NotFoundException('Wishlist not found');
 
-    // Reservations record only which browser or account holds them, so they
-    // can be undone; nobody is told who reserved what.
-    let values: Pick<GiftRow, 'reservedByUserId' | 'reservedByGuestTokenHash'>;
-
-    if (viewer && 'userId' in viewer) {
-      if (viewer.userId === wishlist.userId)
-        throw new ForbiddenException('You cannot reserve your own gifts');
-
-      values = {
-        reservedByUserId: viewer.userId,
-        reservedByGuestTokenHash: null,
-      };
-    } else if (viewer) {
-      values = {
-        reservedByUserId: null,
-        reservedByGuestTokenHash: viewer.guestTokenHash,
-      };
-    } else {
-      throw new BadRequestException('Guest token or authorization is required');
-    }
+    if (userId === wishlist.userId)
+      throw new ForbiddenException('You cannot reserve your own gifts');
 
     // The isNull check makes the reservation atomic: of two concurrent
     // requests only one updates a row.
     const [gift] = await this.db
       .update(giftsTable)
-      .set({ ...values, reservedAt: new Date() })
+      .set({ reservedByUserId: userId, reservedAt: new Date() })
       .where(
         and(
           eq(giftsTable.id, giftId),
@@ -149,30 +107,21 @@ export class PublicService {
       )
       .returning();
 
-    if (gift) return this.toPublicGift(gift, viewer);
+    if (gift) return this.toPublicGift(gift, userId);
 
     await this.assertGiftExists(wishlistId, giftId);
     throw new ConflictException('Gift is already reserved');
   }
 
-  async cancelReservation(wishlistId: string, giftId: string, viewer: Viewer) {
-    if (!viewer)
-      throw new BadRequestException('Guest token or authorization is required');
-
+  async cancelReservation(wishlistId: string, giftId: string, userId: number) {
     const [gift] = await this.db
       .update(giftsTable)
-      .set({
-        reservedByUserId: null,
-        reservedByGuestTokenHash: null,
-        reservedAt: null,
-      })
+      .set({ reservedByUserId: null, reservedAt: null })
       .where(
         and(
           eq(giftsTable.id, giftId),
           eq(giftsTable.wishlistId, wishlistId),
-          'userId' in viewer
-            ? eq(giftsTable.reservedByUserId, viewer.userId)
-            : eq(giftsTable.reservedByGuestTokenHash, viewer.guestTokenHash),
+          eq(giftsTable.reservedByUserId, userId),
         ),
       )
       .returning({ id: giftsTable.id });
@@ -194,33 +143,11 @@ export class PublicService {
     if (!gift) throw new NotFoundException('Gift not found');
   }
 
-  private hashGuestToken(guestToken: string) {
-    if (
-      guestToken.length < MIN_GUEST_TOKEN_LENGTH ||
-      guestToken.length > MAX_GUEST_TOKEN_LENGTH
-    )
-      throw new BadRequestException('Invalid guest token');
-
-    return createHash('sha256').update(guestToken).digest('hex');
-  }
-
   private withoutReservation(gift: GiftRow): GiftRow {
-    return {
-      ...gift,
-      reservedByUserId: null,
-      reservedByGuestTokenHash: null,
-      reservedAt: null,
-    };
+    return { ...gift, reservedByUserId: null, reservedAt: null };
   }
 
-  private toPublicGift(gift: GiftRow, viewer: Viewer) {
-    const reservedByMe =
-      viewer !== null &&
-      gift.reservedAt !== null &&
-      ('userId' in viewer
-        ? gift.reservedByUserId === viewer.userId
-        : gift.reservedByGuestTokenHash === viewer.guestTokenHash);
-
+  private toPublicGift(gift: GiftRow, userId: number) {
     return {
       id: gift.id,
       name: gift.name,
@@ -229,7 +156,8 @@ export class PublicService {
       url: gift.url,
       imageUrl: gift.imageUrl,
       reserved: gift.reservedAt !== null,
-      reservedByMe,
+      reservedByMe:
+        gift.reservedAt !== null && gift.reservedByUserId === userId,
     };
   }
 }

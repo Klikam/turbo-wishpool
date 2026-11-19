@@ -27,8 +27,9 @@ export const OCCASION_LABELS: Record<Occasion, string> = {
 };
 
 /**
- * A wishlist as returned by `GET /public/wishlists/:id`. `isOwner` is true
- * when the request was made by the list's owner, who never sees reservations.
+ * A wishlist as returned by `GET /public/wishlists/:id`, which needs a
+ * signed-in viewer. `isOwner` is true when the request was made by the list's
+ * owner, who never sees reservations.
  */
 export const WishlistSchema =z.object({
   id: z.string(),
@@ -44,6 +45,19 @@ export const WishlistSchema =z.object({
 });
 
 export type Wishlist = z.infer<typeof WishlistSchema>;
+
+/**
+ * A wishlist without its gifts, from `GET /public/wishlists/:id/preview`. It
+ * needs no sign-in, so it is all that link-preview bots and signed-out
+ * visitors get to see.
+ */
+export interface WishlistPreview {
+  id: string;
+  title: string;
+  occasion: Occasion | null;
+  date: string | null;
+  ownerName: string;
+}
 
 /**
  * A wishlist as shown on the dashboard, from `GET /wishlists`. Reservation

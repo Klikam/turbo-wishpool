@@ -1,8 +1,12 @@
 "use server";
 
-import { getOptionalSession, verifySession } from "@/lib/dal";
-import { guestTokenHeaders } from "@/lib/guestToken";
-import type { Occasion, Wishlist, WishlistSummary } from "@/types/wishlist";
+import { verifySession } from "@/lib/dal";
+import type {
+  Occasion,
+  Wishlist,
+  WishlistPreview,
+  WishlistSummary,
+} from "@/types/wishlist";
 import { toResult } from "@/utils/actionResult";
 import { api, ApiError } from "@/utils/apiHelper";
 
@@ -122,21 +126,17 @@ export async function deleteGift(wishlistId: string, giftId: string) {
 }
 
 /**
- * Public view of a wishlist, from the viewer's perspective. Works without a
- * session; the guest token cookie identifies anonymous visitors so their own
- * reservations are flagged `reservedByMe`. Returns null when it doesn't exist.
+ * A wishlist with its gifts, from the signed-in viewer's perspective. Returns
+ * null when it doesn't exist. Needs a session: the page shows signed-out
+ * visitors `getWishlistPreview` instead.
  */
 export async function getPublicWishlist(
   wishlistId: string,
 ): Promise<Wishlist | null> {
-  const session = await getOptionalSession();
+  const { accessToken } = await verifySession();
 
   try {
-    return await api<Wishlist>(
-      `public/wishlists/${wishlistId}`,
-      session?.accessToken ?? null,
-      { headers: await guestTokenHeaders() },
-    );
+    return await api<Wishlist>(`public/wishlists/${wishlistId}`, accessToken);
   } catch (e) {
     // A malformed id is rejected by the backend's UUID validation (400).
     if (e instanceof ApiError && (e.status === 404 || e.status === 400)) {
@@ -146,44 +146,47 @@ export async function getPublicWishlist(
   }
 }
 
-/** Reserves for the signed-in user, or for this browser's guest token. */
+/**
+ * The wishlist without its gifts, for anyone with the link (signed in or
+ * not): what link-preview bots and the sign-in screen show. Returns null when
+ * it doesn't exist.
+ */
+export async function getWishlistPreview(
+  wishlistId: string,
+): Promise<WishlistPreview | null> {
+  try {
+    return await api<WishlistPreview>(
+      `public/wishlists/${wishlistId}/preview`,
+      null,
+    );
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 404 || e.status === 400)) {
+      return null;
+    }
+    throw e;
+  }
+}
+
 export async function reserveGift(wishlistId: string, giftId: string) {
-  const session = await getOptionalSession();
-  const headers = await guestTokenHeaders();
+  const { accessToken } = await verifySession();
 
   return toResult(() =>
     api<void>(
       `public/wishlists/${wishlistId}/gifts/${giftId}/reservation`,
-      session?.accessToken ?? null,
-      { method: "PUT", headers },
+      accessToken,
+      { method: "PUT" },
     ),
   );
 }
 
-/**
- * After signing in, takes over the reservations this browser made as a guest
- * so the user can still see and undo them. A no-op without a session.
- */
-export async function adoptGuestReservations() {
-  const session = await getOptionalSession();
-  if (!session) return;
-
-  await api<{ adopted: number }>(
-    "public/guest-reservations/adopt",
-    session.accessToken,
-    { method: "POST", headers: await guestTokenHeaders() },
-  );
-}
-
 export async function cancelReservation(wishlistId: string, giftId: string) {
-  const session = await getOptionalSession();
-  const headers = await guestTokenHeaders();
+  const { accessToken } = await verifySession();
 
   return toResult(() =>
     api<void>(
       `public/wishlists/${wishlistId}/gifts/${giftId}/reservation`,
-      session?.accessToken ?? null,
-      { method: "DELETE", headers },
+      accessToken,
+      { method: "DELETE" },
     ),
   );
 }

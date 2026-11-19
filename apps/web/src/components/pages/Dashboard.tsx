@@ -116,7 +116,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
       <ConfirmDeleteDialog
         open={confirmingDelete}
         title={`Delete “${listToDelete?.title ?? ""}”?`}
-        description="The wishlist and all its gifts will be deleted for good, and its share link will stop working."
+        description="The wishlist and all its gifts will be deleted for good, and its share link will stop working. Anyone who has claimed a gift on it will be emailed that it's gone."
         onConfirm={() => {
           if (listToDelete) deleteList(listToDelete.id);
         }}
