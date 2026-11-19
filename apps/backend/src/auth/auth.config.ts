@@ -92,5 +92,3 @@ export function createAuth(db: Database, config: AuthConfig) {
     plugins: [bearer()],
   });
 }
-
-export type Auth = ReturnType<typeof createAuth>;
