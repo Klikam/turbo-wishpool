@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { type Resolver, type SubmitHandler, useForm } from "react-hook-form";
@@ -25,6 +26,8 @@ export default function CredentialsPage({
   const [mode, setMode] = useState<Mode>("signin");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Signed in and on the way to callbackURL; keeps the button blocked.
+  const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
 
   const onSubmit: SubmitHandler<RegisterCredentials> = async (data) => {
@@ -48,6 +51,7 @@ export default function CredentialsPage({
     const response = await onLogin(data, callbackURL);
 
     if (response.ok) {
+      setRedirecting(true);
       router.push(callbackURL);
       router.refresh();
     } else {
@@ -58,12 +62,13 @@ export default function CredentialsPage({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<RegisterCredentials>({
     resolver: zodResolver(
       getCredentialsSchema(mode),
     ) as unknown as Resolver<RegisterCredentials>,
   });
+  const busy = isSubmitting || redirecting;
 
   return (
     <>
@@ -141,8 +146,11 @@ export default function CredentialsPage({
 
         <button
           type="submit"
-          className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-[#3a1232] transition-colors mt-1"
+          disabled={busy}
+          aria-busy={busy}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-[#3a1232] transition-colors mt-1 disabled:opacity-60 disabled:cursor-wait"
         >
+          {busy && <Loader2 className="w-4 h-4 animate-spin" />}
           {mode === "signin" ? "Sign in" : "Create account"}
         </button>
       </form>

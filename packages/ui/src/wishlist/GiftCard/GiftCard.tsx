@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ExternalLink, Gift, Trash2 } from "lucide-react";
+import { Check, ExternalLink, Gift, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface GiftCardProps {
@@ -12,6 +12,10 @@ interface GiftCardProps {
   claimed: boolean;
   isOwner: boolean;
   isMine: boolean;
+  /** This gift's reservation is being saved: shows a spinner. */
+  busy?: boolean;
+  /** Blocks the card's buttons, e.g. while another change is saving. */
+  disabled?: boolean;
   onClaim: () => void;
   onUnclaim: () => void;
   onDelete?: () => void;
@@ -26,6 +30,8 @@ export function GiftCard({
   claimed,
   isOwner,
   isMine,
+  busy = false,
+  disabled = false,
   onClaim,
   onUnclaim,
   onDelete,
@@ -80,9 +86,10 @@ export function GiftCard({
         {isOwner && (
           <button
             onClick={onDelete}
+            disabled={disabled}
             aria-label={`Delete ${name}`}
             title="Delete gift"
-            className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shadow"
+            className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shadow disabled:opacity-50 disabled:pointer-events-none"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -124,15 +131,21 @@ export function GiftCard({
               {!claimed ? (
                 <button
                   onClick={onClaim}
-                  className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-lg hover:bg-[#3a1232] transition-colors font-medium"
+                  disabled={disabled}
+                  aria-busy={busy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded-lg hover:bg-[#3a1232] transition-colors font-medium disabled:opacity-60 disabled:pointer-events-none"
                 >
+                  {busy && <Loader2 className="w-3 h-3 animate-spin" />}
                   I&apos;ll gift this
                 </button>
               ) : isMine ? (
                 <button
                   onClick={onUnclaim}
-                  className="px-3 py-1.5 bg-[#C4797A]/15 text-[#C4797A] text-xs rounded-lg hover:bg-[#C4797A]/25 transition-colors font-medium"
+                  disabled={disabled}
+                  aria-busy={busy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C4797A]/15 text-[#C4797A] text-xs rounded-lg hover:bg-[#C4797A]/25 transition-colors font-medium disabled:opacity-60 disabled:pointer-events-none"
                 >
+                  {busy && <Loader2 className="w-3 h-3 animate-spin" />}
                   Undo
                 </button>
               ) : null}

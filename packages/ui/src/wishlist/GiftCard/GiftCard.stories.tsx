@@ -50,3 +50,8 @@ export const OwnerViewClaimed: Story = {
 export const MinimalGift: Story = {
   args: { description: "", price: "", url: "" },
 };
+
+/** The reservation is being saved; another click does nothing. */
+export const Saving: Story = {
+  args: { busy: true, disabled: true },
+};

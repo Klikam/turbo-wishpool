@@ -6,7 +6,7 @@ import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
 import { DashboardHeader } from "@/components/sections/DashboardHeader";
 import { PartyPopper, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { logout as onLogout } from "@/lib/auth";
 import { deleteWishlist } from "@/actions/wishlists";
@@ -25,13 +25,23 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
   );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  async function deleteList(id: string) {
-    const result = await deleteWishlist(id);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    router.refresh();
+  const [, startTransition] = useTransition();
+  // A deleted list disappears at once (the confirm dialog has already
+  // closed) and comes back if the delete fails.
+  const [lists, removeList] = useOptimistic(
+    myLists,
+    (current, id: string) => current.filter((l) => l.id !== id),
+  );
+
+  function deleteList(id: string) {
+    startTransition(async () => {
+      removeList(id);
+      const result = await deleteWishlist(id);
+      startTransition(() => {
+        if (!result.ok) toast.error(result.error);
+        router.refresh();
+      });
+    });
   }
 
   async function handleLogout() {
@@ -69,7 +79,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
           </button>
         </div>
 
-        {myLists.length === 0 ? (
+        {lists.length === 0 ? (
           <EmptyState
             icon={<PartyPopper />}
             message="No wishlists yet — create your first one!"
@@ -83,7 +93,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {myLists.map((list) => (
+            {lists.map((list) => (
               <WishlistCard
                 key={list.id}
                 occasion={OCCASION_LABELS[list.occasion ?? "other"]}
@@ -108,7 +118,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
         title={`Delete “${listToDelete?.title ?? ""}”?`}
         description="The wishlist and all its gifts will be deleted for good, and its share link will stop working."
         onConfirm={() => {
-          if (listToDelete) void deleteList(listToDelete.id);
+          if (listToDelete) deleteList(listToDelete.id);
         }}
         onClose={() => {
           setConfirmingDelete(false);

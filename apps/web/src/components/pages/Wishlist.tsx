@@ -25,7 +25,7 @@ import {
 } from "@repo/ui";
 import { LogIn, Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -49,6 +49,18 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   const [giftToDelete, setGiftToDelete] = useState<GiftItem | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
+  // True from a click until the refreshed list is on screen, so a second
+  // click can't act on what the first one already changed.
+  const [isPending, startTransition] = useTransition();
+  // Gift whose action is running, to show progress on its card.
+  const [busyGiftId, setBusyGiftId] = useState<string | null>(null);
+  // A deleted gift disappears at once (the confirm dialog has already
+  // closed) and comes back if the delete fails.
+  const [gifts, removeGift] = useOptimistic(
+    wishlist.gifts,
+    (current, giftId: string) => current.filter((g) => g.id !== giftId),
+  );
+
   const isOwner = wishlist.isOwner;
 
   function goBack() {
@@ -56,16 +68,29 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   }
 
   /** Runs a mutation, reports a failure, then re-syncs with the backend. */
-  async function mutate(run: () => Promise<ActionResult<unknown>>) {
-    const result = await run();
-    if (!result.ok) toast.error(result.error);
-    router.refresh();
-    return result.ok;
+  function mutate(
+    run: () => Promise<ActionResult<unknown>>,
+    {
+      giftId,
+      removes = false,
+      onSuccess,
+    }: { giftId?: string; removes?: boolean; onSuccess?: () => void } = {},
+  ) {
+    setBusyGiftId(giftId ?? null);
+    startTransition(async () => {
+      if (removes && giftId) removeGift(giftId);
+      const result = await run();
+      startTransition(() => {
+        if (result.ok) onSuccess?.();
+        else toast.error(result.error);
+        router.refresh();
+      });
+    });
   }
 
   function handleClaim(giftId: string) {
     if (isSignedIn) {
-      void mutate(() => reserveGift(wishlistId, giftId));
+      mutate(() => reserveGift(wishlistId, giftId), { giftId });
     } else {
       setClaimingGiftId(giftId);
     }
@@ -76,44 +101,47 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
     const giftId = claimingGiftId;
     setClaimingGiftId(null);
     storageHelper.save(storageHelper.STORAGE_KEYS.guestName, name);
-    void mutate(() => reserveGift(wishlistId, giftId, name));
+    mutate(() => reserveGift(wishlistId, giftId, name), { giftId });
   }
 
   function handleUnclaim(giftId: string) {
-    void mutate(() => cancelReservation(wishlistId, giftId));
+    mutate(() => cancelReservation(wishlistId, giftId), { giftId });
   }
 
   function handleDelete(giftId: string) {
-    void mutate(() => deleteGift(wishlistId, giftId));
+    mutate(() => deleteGift(wishlistId, giftId), { giftId, removes: true });
   }
 
-  async function handleAddGift(newGift: NewGift) {
+  function handleAddGift(newGift: NewGift) {
     const url = emptyToNull(newGift.url);
     const imageUrl = emptyToNull(newGift.imageUrl);
-    const added = await mutate(() =>
-      addGift(wishlistId, {
-        name: newGift.name,
-        description: emptyToNull(newGift.description),
-        price: parsePrice(newGift.price),
-        url,
-        imageUrl,
-      }),
+    mutate(
+      () =>
+        addGift(wishlistId, {
+          name: newGift.name,
+          description: emptyToNull(newGift.description),
+          price: parsePrice(newGift.price),
+          url,
+          imageUrl,
+        }),
+      {
+        onSuccess: () => {
+          setShowAddGift(false);
+          // The backend takes the image from the link after saving the gift.
+          if (url && !imageUrl) {
+            setTimeout(() => {
+              router.refresh();
+            }, IMAGE_LOOKUP_DELAY_MS);
+          }
+        },
+      },
     );
-    if (!added) return;
-
-    setShowAddGift(false);
-    // The backend takes the image from the link after saving the gift.
-    if (url && !imageUrl) {
-      setTimeout(() => {
-        router.refresh();
-      }, IMAGE_LOOKUP_DELAY_MS);
-    }
   }
 
   // The backend hides reservations from the owner, so there is no count to show.
   const claimedCount = isOwner
     ? undefined
-    : wishlist.gifts.filter((g) => g.reserved).length;
+    : gifts.filter((g) => g.reserved).length;
 
   return (
     <div className="flex-1 bg-background">
@@ -157,13 +185,13 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
           title={wishlist.title}
           description={wishlist.note ?? undefined}
           date={wishlist.date ?? undefined}
-          giftsCount={wishlist.gifts.length}
+          giftsCount={gifts.length}
           claimedCount={claimedCount}
           isOwner={isOwner}
         />
 
         {/* Gifts grid */}
-        {wishlist.gifts.length === 0 ? (
+        {gifts.length === 0 ? (
           <EmptyState
             icon={<ShoppingBag />}
             message={
@@ -174,7 +202,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {wishlist.gifts.map((gift) => (
+            {gifts.map((gift) => (
               <GiftCard
                 key={gift.id}
                 name={gift.name}
@@ -189,6 +217,8 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
                 claimed={gift.reserved}
                 isOwner={isOwner}
                 isMine={gift.reservedByMe}
+                busy={isPending && busyGiftId === gift.id}
+                disabled={isPending}
                 onClaim={() => {
                   handleClaim(gift.id);
                 }}
@@ -209,7 +239,8 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
       {showAddGift && (
         <AddGiftModal
           currency={wishlist.currency}
-          onAdd={(gift) => void handleAddGift(gift)}
+          submitting={isPending}
+          onAdd={handleAddGift}
           onClose={() => {
             setShowAddGift(false);
           }}

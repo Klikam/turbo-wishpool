@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { TextField } from "../../common/TextField";
 
 export interface NewGift {
@@ -15,6 +15,8 @@ export interface NewGift {
 interface AddGiftModalProps {
   /** ISO 4217 code of the wishlist's prices, e.g. "PLN". */
   currency: string;
+  /** The gift is being saved: the button is blocked and shows progress. */
+  submitting?: boolean;
   onAdd: (gift: NewGift) => void;
   onClose: () => void;
 }
@@ -27,11 +29,16 @@ const emptyGift: NewGift = {
   imageUrl: "",
 };
 
-export function AddGiftModal({ currency, onAdd, onClose }: AddGiftModalProps) {
+export function AddGiftModal({
+  currency,
+  submitting = false,
+  onAdd,
+  onClose,
+}: AddGiftModalProps) {
   const [newGift, setNewGift] = useState<NewGift>(emptyGift);
 
   function handleAdd() {
-    if (!newGift.name.trim()) return;
+    if (!newGift.name.trim() || submitting) return;
     onAdd({
       name: newGift.name.trim(),
       description: newGift.description.trim(),
@@ -103,10 +110,12 @@ export function AddGiftModal({ currency, onAdd, onClose }: AddGiftModalProps) {
           />
           <button
             onClick={handleAdd}
-            disabled={!newGift.name.trim()}
-            className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-[#3a1232] transition-colors disabled:opacity-40 disabled:cursor-not-allowed mt-1"
+            disabled={!newGift.name.trim() || submitting}
+            aria-busy={submitting}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-[#3a1232] transition-colors disabled:opacity-40 disabled:cursor-not-allowed mt-1"
           >
-            Add to wishlist
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {submitting ? "Adding…" : "Add to wishlist"}
           </button>
         </div>
       </div>
