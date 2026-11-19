@@ -23,11 +23,12 @@ export class MailService {
 
   constructor(config: ConfigService) {
     const host = config.get<string>('SMTP_HOST');
+    // `||`, not `??`: an empty line in .env (`MAIL_FROM=`) means unset.
     this.from =
-      config.get<string>('MAIL_FROM') ?? 'Wishpool <no-reply@localhost>';
+      config.get<string>('MAIL_FROM') || 'Wishpool <no-reply@localhost>';
 
     if (host) {
-      const port = Number(config.get<string>('SMTP_PORT') ?? 587);
+      const port = Number(config.get<string>('SMTP_PORT') || 587);
       this.transporter = createTransport({
         host,
         port,
