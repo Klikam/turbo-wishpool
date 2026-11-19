@@ -75,6 +75,13 @@ export class GiftService {
 
     if (!gift) throw new NotFoundException('Gift not found');
 
+    // E.g. a new link, or the image removed to take it from the link again.
+    const linkOrImageChanged =
+      dto.url !== undefined || dto.imageUrl !== undefined;
+    if (linkOrImageChanged && gift.url && !gift.imageUrl) {
+      this.fillImageInBackground(gift.id, gift.url);
+    }
+
     return gift;
   }
 

@@ -5,6 +5,7 @@ import {
   cancelReservation,
   deleteGift,
   reserveGift,
+  updateGift,
 } from "@/actions/wishlists";
 import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
 import { SignInModal } from "@/components/sections/SignInModal";
@@ -19,12 +20,12 @@ import {
 } from "@/utils/giftHelper";
 import { storageHelper } from "@/utils/storageHelper";
 import {
-  AddGiftModal,
   BackButton,
   EmptyState,
   GiftCard,
+  type GiftFormValues,
+  GiftModal,
   GuestNameModal,
-  type NewGift,
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
@@ -42,12 +43,26 @@ interface WishlistViewProps {
 // Just over the backend's 5 s limit for fetching a gift link's preview image.
 const IMAGE_LOOKUP_DELAY_MS = 6000;
 
+/** A saved gift as the gift dialog's fields. */
+function toFormValues(gift: GiftItem): GiftFormValues {
+  return {
+    name: gift.name,
+    description: gift.description ?? "",
+    price: gift.price === null ? "" : String(gift.price),
+    url: gift.url ?? "",
+    imageUrl: gift.imageUrl ?? "",
+  };
+}
+
 export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   const router = useRouter();
   const wishlistId = wishlist.id;
 
-  const [showAddGift, setShowAddGift] = useState(false);
-  const [addGiftError, setAddGiftError] = useState<string>();
+  // Open gift dialog: `gift` is the one being edited, absent when adding.
+  const [giftDialog, setGiftDialog] = useState<{ gift?: GiftItem } | null>(
+    null,
+  );
+  const [giftDialogError, setGiftDialogError] = useState<string>();
   // Gift a guest is about to reserve, while the name dialog is open.
   const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -124,22 +139,31 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
     mutate(() => deleteGift(wishlistId, giftId), { giftId, removes: true });
   }
 
-  function handleAddGift(newGift: NewGift) {
-    const url = normalizeUrl(newGift.url);
-    const imageUrl = normalizeUrl(newGift.imageUrl);
-    setAddGiftError(undefined);
+  function closeGiftDialog() {
+    setGiftDialog(null);
+    setGiftDialogError(undefined);
+  }
+
+  function handleSaveGift(values: GiftFormValues) {
+    const editedGiftId = giftDialog?.gift?.id;
+    const url = normalizeUrl(values.url);
+    const imageUrl = normalizeUrl(values.imageUrl);
+    const input = {
+      name: values.name,
+      description: emptyToNull(values.description),
+      price: parsePrice(values.price),
+      url,
+      imageUrl,
+    };
+    setGiftDialogError(undefined);
     mutate(
       () =>
-        addGift(wishlistId, {
-          name: newGift.name,
-          description: emptyToNull(newGift.description),
-          price: parsePrice(newGift.price),
-          url,
-          imageUrl,
-        }),
+        editedGiftId
+          ? updateGift(wishlistId, editedGiftId, input)
+          : addGift(wishlistId, input),
       {
         onSuccess: () => {
-          setShowAddGift(false);
+          closeGiftDialog();
           // The backend takes the image from the link after saving the gift.
           if (url && !imageUrl) {
             setTimeout(() => {
@@ -147,7 +171,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
             }, IMAGE_LOOKUP_DELAY_MS);
           }
         },
-        onError: setAddGiftError,
+        onError: setGiftDialogError,
       },
     );
   }
@@ -182,7 +206,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
             {isOwner && (
               <button
                 onClick={() => {
-                  setShowAddGift(true);
+                  setGiftDialog({});
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-[#3a1232] transition-colors"
               >
@@ -240,6 +264,9 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
                 onUnclaim={() => {
                   handleUnclaim(gift.id);
                 }}
+                onEdit={() => {
+                  setGiftDialog({ gift });
+                }}
                 onDelete={() => {
                   setGiftToDelete(gift);
                   setConfirmingDelete(true);
@@ -250,17 +277,15 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
         )}
       </main>
 
-      {/* Add Gift Modal */}
-      {showAddGift && (
-        <AddGiftModal
+      {/* Add or edit gift dialog */}
+      {giftDialog && (
+        <GiftModal
           currency={wishlist.currency}
+          gift={giftDialog.gift && toFormValues(giftDialog.gift)}
           submitting={isPending}
-          error={addGiftError}
-          onAdd={handleAddGift}
-          onClose={() => {
-            setShowAddGift(false);
-            setAddGiftError(undefined);
-          }}
+          error={giftDialogError}
+          onSave={handleSaveGift}
+          onClose={closeGiftDialog}
         />
       )}
 

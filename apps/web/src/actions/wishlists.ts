@@ -80,6 +80,22 @@ export async function addGift(wishlistId: string, input: NewGiftInput) {
   );
 }
 
+/** Saves every field; empty ones (null) are cleared. */
+export async function updateGift(
+  wishlistId: string,
+  giftId: string,
+  input: NewGiftInput,
+) {
+  const { accessToken } = await verifySession();
+
+  return toResult(() =>
+    api<{ id: string }>(`wishlists/${wishlistId}/gifts/${giftId}`, accessToken, {
+      method: "PATCH",
+      body: input,
+    }),
+  );
+}
+
 export async function deleteGift(wishlistId: string, giftId: string) {
   const { accessToken } = await verifySession();
 

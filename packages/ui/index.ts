@@ -13,7 +13,7 @@ export * from "./src/common/TextareaField";
 export * from "./src/wishlist/GiftCard";
 export * from "./src/wishlist/ShareLinkButton";
 export * from "./src/wishlist/WishlistHero";
-export * from "./src/wishlist/AddGiftModal";
+export * from "./src/wishlist/GiftModal";
 export * from "./src/wishlist/OccasionPicker";
 export * from "./src/wishlist/GuestNameModal";
 

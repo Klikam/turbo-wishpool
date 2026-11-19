@@ -6,7 +6,8 @@ import { ToastError } from "../../auth/ToastError";
 import { Modal } from "../../common/Modal";
 import { TextField } from "../../common/TextField";
 
-export interface NewGift {
+/** The gift form's fields, as typed. */
+export interface GiftFormValues {
   name: string;
   description: string;
   price: string;
@@ -14,18 +15,20 @@ export interface NewGift {
   imageUrl: string;
 }
 
-interface AddGiftModalProps {
+interface GiftModalProps {
   /** ISO 4217 code of the wishlist's prices, e.g. "PLN". */
   currency: string;
+  /** The gift being edited. Without it the dialog adds a new gift. */
+  gift?: GiftFormValues;
   /** The gift is being saved: the button is blocked and shows progress. */
   submitting?: boolean;
   /** Why the last attempt failed. Shown here because toasts sit behind the modal. */
   error?: string;
-  onAdd: (gift: NewGift) => void;
+  onSave: (gift: GiftFormValues) => void;
   onClose: () => void;
 }
 
-const emptyGift: NewGift = {
+const emptyGift: GiftFormValues = {
   name: "",
   description: "",
   price: "",
@@ -33,44 +36,51 @@ const emptyGift: NewGift = {
   imageUrl: "",
 };
 
-export function AddGiftModal({
+/** Adds a gift, or edits one when `gift` is given. */
+export function GiftModal({
   currency,
+  gift,
   submitting = false,
   error,
-  onAdd,
+  onSave,
   onClose,
-}: AddGiftModalProps) {
-  const [newGift, setNewGift] = useState<NewGift>(emptyGift);
+}: GiftModalProps) {
+  const [values, setValues] = useState<GiftFormValues>(gift ?? emptyGift);
+  const isEditing = gift !== undefined;
 
-  function handleAdd() {
-    if (!newGift.name.trim() || submitting) return;
-    onAdd({
-      name: newGift.name.trim(),
-      description: newGift.description.trim(),
-      price: newGift.price.trim(),
-      url: newGift.url.trim(),
-      imageUrl: newGift.imageUrl.trim(),
+  function handleSave() {
+    if (!values.name.trim() || submitting) return;
+    onSave({
+      name: values.name.trim(),
+      description: values.description.trim(),
+      price: values.price.trim(),
+      url: values.url.trim(),
+      imageUrl: values.imageUrl.trim(),
     });
   }
 
   return (
-    <Modal title="Add a gift" onClose={onClose} maxWidth="max-w-md">
+    <Modal
+      title={isEditing ? "Edit gift" : "Add a gift"}
+      onClose={onClose}
+      maxWidth="max-w-md"
+    >
       <div className="p-6 flex flex-col gap-4">
         <TextField
           label="Gift name *"
           placeholder="e.g. Wireless headphones"
-          value={newGift.name}
+          value={values.name}
           onChange={(name) => {
-            setNewGift({ ...newGift, name });
+            setValues({ ...values, name });
           }}
           compact
         />
         <TextField
           label="Description"
           placeholder="Color, size, model…"
-          value={newGift.description}
+          value={values.description}
           onChange={(description) => {
-            setNewGift({ ...newGift, description });
+            setValues({ ...values, description });
           }}
           compact
         />
@@ -78,9 +88,9 @@ export function AddGiftModal({
           <TextField
             label={`Price (${currency})`}
             placeholder="49.90"
-            value={newGift.price}
+            value={values.price}
             onChange={(price) => {
-              setNewGift({ ...newGift, price });
+              setValues({ ...values, price });
             }}
             compact
           />
@@ -88,9 +98,9 @@ export function AddGiftModal({
             label="Link (URL)"
             placeholder="shop.com/item"
             type="url"
-            value={newGift.url}
+            value={values.url}
             onChange={(url) => {
-              setNewGift({ ...newGift, url });
+              setValues({ ...values, url });
             }}
             compact
           />
@@ -99,9 +109,9 @@ export function AddGiftModal({
           label="Image URL"
           placeholder="Optional — taken from the link if empty"
           type="url"
-          value={newGift.imageUrl}
+          value={values.imageUrl}
           onChange={(imageUrl) => {
-            setNewGift({ ...newGift, imageUrl });
+            setValues({ ...values, imageUrl });
           }}
           compact
         />
@@ -111,13 +121,19 @@ export function AddGiftModal({
           </div>
         )}
         <button
-          onClick={handleAdd}
-          disabled={!newGift.name.trim() || submitting}
+          onClick={handleSave}
+          disabled={!values.name.trim() || submitting}
           aria-busy={submitting}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-[#3a1232] transition-colors disabled:opacity-40 disabled:cursor-not-allowed mt-1"
         >
           {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          {submitting ? "Adding…" : "Add to wishlist"}
+          {submitting
+            ? isEditing
+              ? "Saving…"
+              : "Adding…"
+            : isEditing
+              ? "Save changes"
+              : "Add to wishlist"}
         </button>
       </div>
     </Modal>

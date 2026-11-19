@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, ExternalLink, Gift, Loader2, Trash2 } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  Gift,
+  Loader2,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 interface GiftCardProps {
@@ -18,6 +25,7 @@ interface GiftCardProps {
   disabled?: boolean;
   onClaim: () => void;
   onUnclaim: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 }
 
@@ -34,6 +42,7 @@ export function GiftCard({
   disabled = false,
   onClaim,
   onUnclaim,
+  onEdit,
   onDelete,
 }: GiftCardProps) {
   // Shop images can disappear or block hotlinking, so a broken one falls back
@@ -91,15 +100,26 @@ export function GiftCard({
           </div>
         )}
         {isOwner && (
-          <button
-            onClick={onDelete}
-            disabled={disabled}
-            aria-label={`Delete ${name}`}
-            title="Delete gift"
-            className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shadow disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="absolute top-2 right-2 flex gap-1.5">
+            <button
+              onClick={onEdit}
+              disabled={disabled}
+              aria-label={`Edit ${name}`}
+              title="Edit gift"
+              className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onDelete}
+              disabled={disabled}
+              aria-label={`Delete ${name}`}
+              title="Delete gift"
+              className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors shadow disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
 
