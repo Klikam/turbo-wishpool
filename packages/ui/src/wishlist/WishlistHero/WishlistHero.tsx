@@ -50,7 +50,7 @@ export function WishlistHero({
               </span>
             )}
             <span>
-              🎁 {giftsCount} gifts
+              🎁 {giftsCount} {giftsCount === 1 ? "gift" : "gifts"}
               {claimedCount !== undefined &&
                 ` · ${claimedCount.toString()} being gifted`}
             </span>

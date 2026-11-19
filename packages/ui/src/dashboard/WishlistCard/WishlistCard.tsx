@@ -72,7 +72,7 @@ export function WishlistCard({
       </div>
       <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
-          {giftsCount} gifts
+          {giftsCount} {giftsCount === 1 ? "gift" : "gifts"}
           {claimedCount !== undefined && ` · ${claimedCount.toString()} claimed`}
         </span>
         <div className="flex items-center gap-1 text-xs text-[#C4797A] font-medium">

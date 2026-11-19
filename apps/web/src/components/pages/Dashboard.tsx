@@ -84,7 +84,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
             icon={<PartyPopper />}
             message="No wishlists yet — create your first one!"
             action={{
-              label: "Create wishlists",
+              label: "Create a wishlist",
               onClick: () => {
                 router.push("/create");
               },
