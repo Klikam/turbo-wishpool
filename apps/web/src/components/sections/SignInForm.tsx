@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SocialButton, ToastError } from "@repo/ui";
 import CredentialsPage from "@/components/pages/CredentialsPage";
@@ -78,8 +79,15 @@ export function SignInForm({
       </div>
 
       <p className="text-xs text-muted-foreground mt-6 text-center leading-relaxed">
-        By signing in you agree to our terms. Your data stays private — gift
-        selections are always anonymous to the wishlist owner.
+        By signing in you agree to our{" "}
+        <Link href="/terms" className="underline underline-offset-4">
+          terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline underline-offset-4">
+          privacy policy
+        </Link>
+        . Gift selections are always anonymous to the wishlist owner.
       </p>
     </>
   );

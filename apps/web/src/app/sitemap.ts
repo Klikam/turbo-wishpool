@@ -1,7 +1,12 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/config";
 
-// Only the landing page is public; wishlists are shared by link.
+// The public pages; wishlists are shared by link and stay out.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [{ url: getSiteUrl() }];
+  const siteUrl = getSiteUrl();
+  return [
+    { url: siteUrl },
+    { url: `${siteUrl}/terms` },
+    { url: `${siteUrl}/privacy` },
+  ];
 }

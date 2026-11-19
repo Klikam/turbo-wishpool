@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 function PolishFlag() {
   return (
     <svg
@@ -31,6 +33,18 @@ export function Footer() {
       >
         Report a bug
       </a>
+      <span aria-hidden="true" className="mx-2">
+        ·
+      </span>
+      <Link href="/terms" className={linkClassName}>
+        Terms
+      </Link>
+      <span aria-hidden="true" className="mx-2">
+        ·
+      </span>
+      <Link href="/privacy" className={linkClassName}>
+        Privacy
+      </Link>
     </footer>
   );
 }
