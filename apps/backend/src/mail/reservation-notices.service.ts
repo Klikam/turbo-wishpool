@@ -6,15 +6,15 @@ import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import {
   giftEditedMail,
-  giftsRemovedMail,
+  giftRemovedMail,
   type RemovedReservation,
 } from './gift-removed.mail';
 import { MailService } from './mail.service';
 
 /**
- * Owners can't see reservations, so when they delete a reserved gift (or the
- * list it is on) the reserver is emailed instead. Look the reservations up
- * before deleting, send once the delete has succeeded.
+ * Owners can't see reservations, so when they edit or delete a reserved gift
+ * the reserver is emailed instead. Look the reservations up before changing
+ * the gift, send once the change has succeeded.
  */
 @Injectable()
 export class ReservationNoticeService {
@@ -55,17 +55,10 @@ export class ReservationNoticeService {
     }
   }
 
-  /** One email per reserver, sent in the background so the owner's request isn't slowed down. */
+  /** Tells the reservers of a deleted gift that it is gone. */
   notifyRemoved(reservations: RemovedReservation[]) {
-    const byRecipient = new Map<string, RemovedReservation[]>();
     for (const reservation of reservations) {
-      const list = byRecipient.get(reservation.to) ?? [];
-      list.push(reservation);
-      byRecipient.set(reservation.to, list);
-    }
-
-    for (const [to, removed] of byRecipient) {
-      this.mail.sendInBackground(giftsRemovedMail(to, removed));
+      this.mail.sendInBackground(giftRemovedMail(reservation));
     }
   }
 }

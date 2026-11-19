@@ -31,7 +31,7 @@ export default function PrivacyPage() {
             <strong>Reservations:</strong> which gifts are taken, and by which
             account, so only that person can undo it. Wishlist owners can&apos;t
             see which gifts are taken or by whom. If an owner changes or deletes a
-            gift (or deletes a list) you reserved, we email you about it.
+            gift you reserved, we email you about it.
           </li>
         </ul>
       </section>

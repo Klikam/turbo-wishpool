@@ -25,36 +25,14 @@ export function giftEditedMail(
 }
 
 /**
- * Tells someone that gifts they reserved are gone from the list, so the
+ * Tells someone that a gift they reserved is gone from the list, so the
  * reservation is gone too. Owners never learn that a gift was reserved, so
- * this is the only way the reserver finds out. One email per person, however
- * many of their gifts were removed together (e.g. a whole list).
+ * this is the only way the reserver finds out.
  */
-export function giftsRemovedMail(
-  to: string,
-  removed: Pick<
-    RemovedReservation,
-    'giftName' | 'wishlistTitle' | 'ownerName'
-  >[],
-): MailMessage {
-  const [first] = removed;
-  const single = removed.length === 1 && first;
-
-  if (single) {
-    return {
-      to,
-      subject: `A gift you reserved was removed from "${first.wishlistTitle}"`,
-      text: `${first.ownerName} removed "${first.giftName}" from their wishlist "${first.wishlistTitle}" on Wishpool, so your reservation is gone too. You don't need to buy it.`,
-    };
-  }
-
-  const lines = removed
-    .map((r) => `- "${r.giftName}" (${r.ownerName}, "${r.wishlistTitle}")`)
-    .join('\n');
-
+export function giftRemovedMail(reservation: RemovedReservation): MailMessage {
   return {
-    to,
-    subject: 'Gifts you reserved were removed from a wishlist',
-    text: `These gifts you reserved on Wishpool were removed from their wishlists, so your reservations are gone too. You don't need to buy them:\n\n${lines}`,
+    to: reservation.to,
+    subject: `A gift you reserved was removed from "${reservation.wishlistTitle}"`,
+    text: `${reservation.ownerName} removed "${reservation.giftName}" from their wishlist "${reservation.wishlistTitle}" on Wishpool, so your reservation is gone too. You don't need to buy it.`,
   };
 }
