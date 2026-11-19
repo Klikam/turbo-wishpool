@@ -11,7 +11,12 @@ import { SignInModal } from "@/components/sections/SignInModal";
 import type { GiftItem } from "@/types/giftItem";
 import { OCCASION_LABELS, type Wishlist } from "@/types/wishlist";
 import type { ActionResult } from "@/utils/actionResult";
-import { emptyToNull, formatPrice, parsePrice } from "@/utils/giftHelper";
+import {
+  emptyToNull,
+  formatPrice,
+  normalizeUrl,
+  parsePrice,
+} from "@/utils/giftHelper";
 import { storageHelper } from "@/utils/storageHelper";
 import {
   AddGiftModal,
@@ -113,8 +118,8 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   }
 
   function handleAddGift(newGift: NewGift) {
-    const url = emptyToNull(newGift.url);
-    const imageUrl = emptyToNull(newGift.imageUrl);
+    const url = normalizeUrl(newGift.url);
+    const imageUrl = normalizeUrl(newGift.imageUrl);
     mutate(
       () =>
         addGift(wishlistId, {

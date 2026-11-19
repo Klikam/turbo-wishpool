@@ -28,3 +28,13 @@ export function parsePrice(input: string): number | null {
 export function emptyToNull(input: string): string | null {
   return input.trim() === '' ? null : input.trim();
 }
+
+/**
+ * Like emptyToNull, for links: "shop.com/item" is saved as
+ * "https://shop.com/item". Anything else is left for the backend to check.
+ */
+export function normalizeUrl(input: string): string | null {
+  const url = emptyToNull(input);
+  if (url === null || /^[a-z][a-z\d+.-]*:\/\//i.test(url)) return url;
+  return `https://${url}`;
+}

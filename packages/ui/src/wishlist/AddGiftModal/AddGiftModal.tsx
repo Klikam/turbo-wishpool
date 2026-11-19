@@ -91,7 +91,8 @@ export function AddGiftModal({
             />
             <TextField
               label="Link (URL)"
-              placeholder="https://…"
+              placeholder="shop.com/item"
+              type="url"
               value={newGift.url}
               onChange={(url) => {
                 setNewGift({ ...newGift, url });
@@ -102,6 +103,7 @@ export function AddGiftModal({
           <TextField
             label="Image URL"
             placeholder="Optional — taken from the link if empty"
+            type="url"
             value={newGift.imageUrl}
             onChange={(imageUrl) => {
               setNewGift({ ...newGift, imageUrl });

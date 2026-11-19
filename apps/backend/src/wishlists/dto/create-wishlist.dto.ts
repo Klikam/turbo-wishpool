@@ -16,28 +16,35 @@ export type Occasion = (typeof occasionEnum.enumValues)[number];
 export const toUpperCase = ({ value }: TransformFnParams): unknown =>
   typeof value === 'string' ? value.toUpperCase() : value;
 
+// Messages are shown to users as they are, so they name the form fields.
+export const WISHLIST_MESSAGES = {
+  titleRequired: { message: 'Enter a title for the wishlist' },
+  titleTooLong: { message: 'The title can be at most 255 characters' },
+  currency: { message: 'Choose a valid currency' },
+};
+
 export class CreateWishlistDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
+  @IsString(WISHLIST_MESSAGES.titleRequired)
+  @IsNotEmpty(WISHLIST_MESSAGES.titleRequired)
+  @MaxLength(255, WISHLIST_MESSAGES.titleTooLong)
   title!: string;
 
   @IsOptional()
-  @IsIn(occasionEnum.enumValues)
+  @IsIn(occasionEnum.enumValues, { message: 'Choose one of the occasions' })
   occasion?: Occasion;
 
   @IsOptional()
-  @IsISO8601({ strict: true })
+  @IsISO8601({ strict: true }, { message: 'Choose a valid date' })
   date?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(2000)
+  @MaxLength(2000, { message: 'The note can be at most 2000 characters' })
   note?: string;
 
   /** Defaults to EUR. */
   @IsOptional()
   @Transform(toUpperCase)
-  @IsISO4217CurrencyCode()
+  @IsISO4217CurrencyCode(WISHLIST_MESSAGES.currency)
   currency?: string;
 }

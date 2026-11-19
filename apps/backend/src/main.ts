@@ -21,6 +21,8 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      // One message per field: they are shown to users as they are.
+      stopAtFirstError: true,
     }),
   );
 

@@ -23,7 +23,8 @@ async function readErrorMessage(response: Response) {
   const text = await response.text();
   try {
     const { message } = JSON.parse(text) as { message?: string | string[] };
-    if (Array.isArray(message)) return message.join(", ");
+    // Validation errors come as one sentence per field.
+    if (Array.isArray(message)) return message.join(". ");
     if (message) return message;
   } catch {
     // not JSON, fall through to the raw body

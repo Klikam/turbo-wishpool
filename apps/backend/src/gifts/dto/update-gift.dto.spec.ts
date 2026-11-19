@@ -8,6 +8,7 @@ const pipe = new ValidationPipe({
   whitelist: true,
   forbidNonWhitelisted: true,
   transform: true,
+  stopAtFirstError: true,
 });
 
 const validate = (metatype: new () => object, value: object) =>
@@ -23,6 +24,19 @@ describe('PATCH bodies', () => {
   it('refuse to clear a gift name', async () => {
     await expect(validate(UpdateGiftDto, { name: null })).rejects.toThrow();
     await expect(validate(UpdateGiftDto, { name: '' })).rejects.toThrow();
+  });
+
+  it('explain invalid fields in words users understand', async () => {
+    await expect(validate(UpdateGiftDto, { name: '' })).rejects.toMatchObject({
+      response: { message: ['Enter a gift name'] },
+    });
+    await expect(
+      validate(UpdateGiftDto, { url: 'not a link' }),
+    ).rejects.toMatchObject({
+      response: {
+        message: ["The link isn't a web address, e.g. https://shop.com/item"],
+      },
+    });
   });
 
   it('leave out what is not sent', async () => {
