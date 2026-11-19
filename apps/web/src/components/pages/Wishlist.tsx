@@ -47,6 +47,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   const wishlistId = wishlist.id;
 
   const [showAddGift, setShowAddGift] = useState(false);
+  const [addGiftError, setAddGiftError] = useState<string>();
   // Gift a guest is about to reserve, while the name dialog is open.
   const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -79,7 +80,13 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
       giftId,
       removes = false,
       onSuccess,
-    }: { giftId?: string; removes?: boolean; onSuccess?: () => void } = {},
+      onError = toast.error,
+    }: {
+      giftId?: string;
+      removes?: boolean;
+      onSuccess?: () => void;
+      onError?: (message: string) => void;
+    } = {},
   ) {
     setBusyGiftId(giftId ?? null);
     startTransition(async () => {
@@ -87,7 +94,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
       const result = await run();
       startTransition(() => {
         if (result.ok) onSuccess?.();
-        else toast.error(result.error);
+        else onError(result.error);
         router.refresh();
       });
     });
@@ -120,6 +127,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   function handleAddGift(newGift: NewGift) {
     const url = normalizeUrl(newGift.url);
     const imageUrl = normalizeUrl(newGift.imageUrl);
+    setAddGiftError(undefined);
     mutate(
       () =>
         addGift(wishlistId, {
@@ -139,6 +147,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
             }, IMAGE_LOOKUP_DELAY_MS);
           }
         },
+        onError: setAddGiftError,
       },
     );
   }
@@ -246,9 +255,11 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
         <AddGiftModal
           currency={wishlist.currency}
           submitting={isPending}
+          error={addGiftError}
           onAdd={handleAddGift}
           onClose={() => {
             setShowAddGift(false);
+            setAddGiftError(undefined);
           }}
         />
       )}

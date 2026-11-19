@@ -20,3 +20,9 @@ export const Default: Story = {};
 export const Submitting: Story = {
   args: { submitting: true },
 };
+
+export const WithError: Story = {
+  args: {
+    error: "The link isn't a web address, e.g. https://shop.com/item",
+  },
+};
