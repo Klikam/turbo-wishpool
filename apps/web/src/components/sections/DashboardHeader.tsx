@@ -1,4 +1,5 @@
 import { Gift, LogOut } from "lucide-react";
+import Link from "next/link";
 import Avatar from "@/components/sections/Avatar";
 
 interface DashboardHeaderProps {
@@ -17,10 +18,17 @@ export function DashboardHeader({ userName, onLogout }: DashboardHeaderProps) {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <Avatar name={userName} size="sm" />
-          <span className="text-sm text-foreground hidden sm:block">
-            {userName}
-          </span>
+          <Link
+            href="/account"
+            aria-label="Your account"
+            title="Your account"
+            className="flex items-center gap-3 rounded-full hover:opacity-80 transition-opacity"
+          >
+            <Avatar name={userName} size="sm" />
+            <span className="text-sm text-foreground hidden sm:block">
+              {userName}
+            </span>
+          </Link>
           <button
             onClick={onLogout}
             className="text-muted-foreground hover:text-foreground transition-colors"

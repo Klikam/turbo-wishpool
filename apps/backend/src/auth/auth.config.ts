@@ -2,9 +2,11 @@ import { betterAuth } from 'better-auth';
 import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { compare, hash } from 'bcrypt';
+import { eq } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import {
   accountsTable,
+  giftsTable,
   sessionsTable,
   usersTable,
   verificationsTable,
@@ -86,6 +88,22 @@ export function createAuth(db: Database, config: AuthConfig) {
       ...(config.socialProviders.facebook && {
         facebook: config.socialProviders.facebook,
       }),
+    },
+    user: {
+      // POST /api/auth/delete-user. It needs the password, or for accounts
+      // without one (social sign-in) a session from the last day. Wishlists,
+      // sessions and accounts go with the user (ON DELETE CASCADE).
+      deleteUser: {
+        enabled: true,
+        // Reservations only point at the user (ON DELETE SET NULL), so the
+        // gifts would stay taken by nobody; free them instead.
+        beforeDelete: async (user) => {
+          await db
+            .update(giftsTable)
+            .set({ reservedByUserId: null, reservedAt: null })
+            .where(eq(giftsTable.reservedByUserId, Number(user.id)));
+        },
+      },
     },
     // Lets server-side calls from the web app authenticate with
     // `Authorization: Bearer <session token>`.

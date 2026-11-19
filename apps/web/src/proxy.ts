@@ -7,7 +7,7 @@ import {
 } from "@/lib/guestToken";
 import { NEXT_PARAM } from "@/utils/redirectHelper";
 
-const protectedRoutes = ["/dashboard", "/create"];
+const protectedRoutes = ["/dashboard", "/create", "/account"];
 // The wishlist page itself is public; editing it is not.
 const EDIT_WISHLIST_ROUTE = /^\/wishlist\/[^/]+\/edit\/?$/;
 
