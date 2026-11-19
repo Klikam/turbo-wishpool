@@ -1,26 +1,20 @@
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { createTransport } from 'nodemailer';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MailService } from './mail.service';
 
-jest.mock('nodemailer', () => ({ createTransport: jest.fn() }));
-// @nestjs/config is ESM-only, which Jest can't load; the service only reads
-// settings, so a plain object stands in for ConfigService.
-jest.mock('@nestjs/config', () => ({ ConfigService: class {} }));
+vi.mock('nodemailer', () => ({ createTransport: vi.fn() }));
 
-const config = (env: Record<string, string>) =>
-  ({
-    get: (key: string) => env[key],
-    getOrThrow: (key: string) => env[key],
-  }) as unknown as ConfigService;
+const config = (env: Record<string, string>) => new ConfigService(env);
 
-const sendMail = jest.fn();
-jest.mocked(createTransport).mockReturnValue({ sendMail } as never);
+const sendMail = vi.fn();
+vi.mocked(createTransport).mockReturnValue({ sendMail } as never);
 
 const message = { to: 'guest@example.com', subject: 'Hi', text: 'Hello' };
 
 describe('MailService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('uses defaults for settings left empty in .env', async () => {
