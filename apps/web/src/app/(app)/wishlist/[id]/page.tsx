@@ -1,7 +1,27 @@
 import { adoptGuestReservations, getPublicWishlist } from '@/actions/wishlists';
 import Wishlist from '@/components/pages/Wishlist';
 import { getOptionalSession } from '@/lib/dal';
+import { siteOpenGraph } from '@/lib/ogImage';
+import { wishlistPreview } from '@/utils/wishlistPreview';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const wishlist = await getPublicWishlist((await params).id);
+  if (!wishlist) return {};
+
+  const { title, description } = wishlistPreview(wishlist);
+  // The preview image comes from the opengraph-image file next to this page.
+  return {
+    title,
+    description,
+    openGraph: { ...siteOpenGraph, title, description },
+  };
+}
 
 export default async function WishlistPage({
   params,

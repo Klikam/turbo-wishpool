@@ -1,7 +1,10 @@
 import { getPublicWishlist } from '@/actions/wishlists';
 import WishlistForm from '@/components/pages/WishlistForm';
 import { verifySession } from '@/lib/dal';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
+export const metadata: Metadata = { title: 'Edit wishlist' };
 
 export default async function EditWishlistPage({
   params,

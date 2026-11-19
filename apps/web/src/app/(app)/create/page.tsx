@@ -2,6 +2,9 @@ import { headers } from 'next/headers';
 import WishlistForm from '@/components/pages/WishlistForm';
 import { verifySession } from '@/lib/dal';
 import { currencyFromAcceptLanguage } from '@/utils/currency';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'New wishlist' };
 
 export default async function CreatePage() {
   await verifySession();

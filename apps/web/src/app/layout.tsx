@@ -2,14 +2,22 @@ import type { Metadata } from "next";
 import { Figtree, Playfair_Display } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
+import { getSiteUrl } from "@/lib/config";
+import { siteOpenGraph } from "@/lib/ogImage";
 
 import "./globals.css";
 
+const description =
+  "Create a wishlist for any occasion and share it with one link. Friends pick gifts anonymously — no duplicates, no awkward reveals.";
+
+// Search engines may index the landing page; the (app) layout opts the
+// signed-in pages and shared wishlists out.
 export const metadata: Metadata = {
-  title: "Wishpool",
-  description:
-    "Create and manage personalized gifts wishlists while preventing duplicates, allowing friends to anonymously claim gifts for special occasions.",
-  robots: "noindex, nofollow",
+  metadataBase: new URL(getSiteUrl()),
+  title: { default: "Wishpool", template: "%s · Wishpool" },
+  description,
+  openGraph: { ...siteOpenGraph, description },
+  twitter: { card: "summary_large_image" },
 };
 
 const figtree = Figtree({

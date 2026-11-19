@@ -5,7 +5,14 @@ import {
   NEXT_PARAM,
   safeNextPath,
 } from '@/utils/redirectHelper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: { absolute: 'Wishpool — gift wishlists without duplicate gifts' },
+  // Variants like /?next=… are the same page.
+  alternates: { canonical: '/' },
+};
 
 export default async function Page({
   searchParams,
