@@ -57,6 +57,13 @@ export function GiftCard({
               alt={name}
               referrerPolicy="no-referrer"
               onError={() => setImageFailed(true)}
+              // In server-rendered pages the image can fail before React
+              // attaches onError, so also check once it's in the page.
+              ref={(img) => {
+                if (img?.complete && img.naturalWidth === 0) {
+                  setImageFailed(true);
+                }
+              }}
               className="w-full h-full object-cover"
             />
           ) : (
