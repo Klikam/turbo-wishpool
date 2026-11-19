@@ -16,7 +16,6 @@ export const mockGift = (overrides: Partial<GiftItem> = {}): GiftItem => ({
   url: 'https://example.com/headphones',
   imageUrl: null,
   reserved: false,
-  reservedByName: null,
   reservedByMe: false,
   ...overrides,
 });
@@ -30,7 +29,6 @@ export const mockGifts: GiftItem[] = [
     price: 89,
     url: null,
     reserved: true,
-    reservedByName: 'Noah Bennett',
     reservedByMe: false,
   }),
   mockGift({

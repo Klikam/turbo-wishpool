@@ -1,0 +1,1 @@
+ALTER TABLE "gifts" DROP COLUMN "reservedByName";

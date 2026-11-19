@@ -13,7 +13,6 @@ export const GiftItemSchema = z.object({
   url: z.string().nullable(),
   imageUrl: z.string().nullable(),
   reserved: z.boolean(),
-  reservedByName: z.string().nullable(),
   reservedByMe: z.boolean(),
 });
 

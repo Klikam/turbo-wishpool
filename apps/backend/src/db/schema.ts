@@ -119,7 +119,6 @@ export const giftsTable = pgTable.withRLS(
     reservedByUserId: integer().references(() => usersTable.id, {
       onDelete: 'set null',
     }),
-    reservedByName: varchar({ length: 255 }),
     reservedByGuestTokenHash: varchar({ length: 64 }),
     reservedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

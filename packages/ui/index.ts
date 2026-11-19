@@ -15,7 +15,6 @@ export * from "./src/wishlist/ShareLinkButton";
 export * from "./src/wishlist/WishlistHero";
 export * from "./src/wishlist/GiftModal";
 export * from "./src/wishlist/OccasionPicker";
-export * from "./src/wishlist/GuestNameModal";
 
 export * from "./src/dashboard/WishlistCard";
 

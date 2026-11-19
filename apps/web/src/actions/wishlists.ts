@@ -146,12 +146,8 @@ export async function getPublicWishlist(
   }
 }
 
-/** Signed-in users reserve under their account name; guests must pass `name`. */
-export async function reserveGift(
-  wishlistId: string,
-  giftId: string,
-  name?: string,
-) {
+/** Reserves for the signed-in user, or for this browser's guest token. */
+export async function reserveGift(wishlistId: string, giftId: string) {
   const session = await getOptionalSession();
   const headers = await guestTokenHeaders();
 
@@ -159,7 +155,7 @@ export async function reserveGift(
     api<void>(
       `public/wishlists/${wishlistId}/gifts/${giftId}/reservation`,
       session?.accessToken ?? null,
-      { method: "PUT", body: { name }, headers },
+      { method: "PUT", headers },
     ),
   );
 }

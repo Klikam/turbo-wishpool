@@ -5,7 +5,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { and, eq, isNull, notInArray } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
@@ -47,12 +46,6 @@ export class PublicService {
   async adoptGuestReservations(userId: number, guestToken: string) {
     const guestTokenHash = this.hashGuestToken(guestToken);
 
-    const [user] = await this.db
-      .select({ name: usersTable.name })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId));
-    if (!user) throw new UnauthorizedException();
-
     const ownWishlists = this.db
       .select({ id: wishlistsTable.id })
       .from(wishlistsTable)
@@ -60,11 +53,7 @@ export class PublicService {
 
     const adopted = await this.db
       .update(giftsTable)
-      .set({
-        reservedByUserId: userId,
-        reservedByName: user.name,
-        reservedByGuestTokenHash: null,
-      })
+      .set({ reservedByUserId: userId, reservedByGuestTokenHash: null })
       .where(
         and(
           eq(giftsTable.reservedByGuestTokenHash, guestTokenHash),
@@ -117,12 +106,7 @@ export class PublicService {
     };
   }
 
-  async reserve(
-    wishlistId: string,
-    giftId: string,
-    viewer: Viewer,
-    name: string | undefined,
-  ) {
+  async reserve(wishlistId: string, giftId: string, viewer: Viewer) {
     const [wishlist] = await this.db
       .select({ userId: wishlistsTable.userId })
       .from(wishlistsTable)
@@ -130,33 +114,21 @@ export class PublicService {
 
     if (!wishlist) throw new NotFoundException('Wishlist not found');
 
-    let values: Pick<
-      GiftRow,
-      'reservedByUserId' | 'reservedByName' | 'reservedByGuestTokenHash'
-    >;
+    // Reservations record only which browser or account holds them, so they
+    // can be undone; nobody is told who reserved what.
+    let values: Pick<GiftRow, 'reservedByUserId' | 'reservedByGuestTokenHash'>;
 
     if (viewer && 'userId' in viewer) {
       if (viewer.userId === wishlist.userId)
         throw new ForbiddenException('You cannot reserve your own gifts');
 
-      const [user] = await this.db
-        .select({ name: usersTable.name })
-        .from(usersTable)
-        .where(eq(usersTable.id, viewer.userId));
-      if (!user) throw new UnauthorizedException();
-
       values = {
         reservedByUserId: viewer.userId,
-        reservedByName: user.name,
         reservedByGuestTokenHash: null,
       };
     } else if (viewer) {
-      const guestName = name?.trim();
-      if (!guestName) throw new BadRequestException('Name is required');
-
       values = {
         reservedByUserId: null,
-        reservedByName: guestName,
         reservedByGuestTokenHash: viewer.guestTokenHash,
       };
     } else {
@@ -191,7 +163,6 @@ export class PublicService {
       .update(giftsTable)
       .set({
         reservedByUserId: null,
-        reservedByName: null,
         reservedByGuestTokenHash: null,
         reservedAt: null,
       })
@@ -237,7 +208,6 @@ export class PublicService {
     return {
       ...gift,
       reservedByUserId: null,
-      reservedByName: null,
       reservedByGuestTokenHash: null,
       reservedAt: null,
     };
@@ -259,7 +229,6 @@ export class PublicService {
       url: gift.url,
       imageUrl: gift.imageUrl,
       reserved: gift.reservedAt !== null,
-      reservedByName: gift.reservedByName,
       reservedByMe,
     };
   }

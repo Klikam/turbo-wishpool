@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
@@ -15,7 +14,6 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { OptionalAuth } from '@thallesp/nestjs-better-auth';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { PublicService } from './public.service';
-import { ReserveGiftDto } from './dto/reserve-gift.dto';
 
 // Visitors may be anonymous, but a token that is sent is still validated.
 @OptionalAuth()
@@ -40,10 +38,9 @@ export class PublicController {
     @Headers('x-guest-token') guestToken: string | undefined,
     @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ReserveGiftDto,
   ) {
     const viewer = this.publicService.resolveViewer(userId, guestToken);
-    return await this.publicService.reserve(wishlistId, id, viewer, dto.name);
+    return await this.publicService.reserve(wishlistId, id, viewer);
   }
 
   @UseGuards(ThrottlerGuard)

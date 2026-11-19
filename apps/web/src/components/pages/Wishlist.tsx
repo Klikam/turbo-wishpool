@@ -18,14 +18,12 @@ import {
   normalizeUrl,
   parsePrice,
 } from "@/utils/giftHelper";
-import { storageHelper } from "@/utils/storageHelper";
 import {
   BackButton,
   EmptyState,
   GiftCard,
   type GiftFormValues,
   GiftModal,
-  GuestNameModal,
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
@@ -34,7 +32,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
-import z from "zod";
 
 interface WishlistViewProps {
   wishlist: Wishlist;
@@ -64,8 +61,6 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
     null,
   );
   const [giftDialogError, setGiftDialogError] = useState<string>();
-  // Gift a guest is about to reserve, while the name dialog is open.
-  const [claimingGiftId, setClaimingGiftId] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
   // Kept after the dialog closes so its text doesn't change while it fades out.
   const [giftToDelete, setGiftToDelete] = useState<GiftItem | null>(null);
@@ -117,19 +112,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
   }
 
   function handleClaim(giftId: string) {
-    if (isSignedIn) {
-      mutate(() => reserveGift(wishlistId, giftId), { giftId });
-    } else {
-      setClaimingGiftId(giftId);
-    }
-  }
-
-  function handleGuestClaim(name: string) {
-    if (!claimingGiftId) return;
-    const giftId = claimingGiftId;
-    setClaimingGiftId(null);
-    storageHelper.save(storageHelper.STORAGE_KEYS.guestName, name);
-    mutate(() => reserveGift(wishlistId, giftId, name), { giftId });
+    mutate(() => reserveGift(wishlistId, giftId), { giftId });
   }
 
   function handleUnclaim(giftId: string) {
@@ -312,25 +295,6 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
           setConfirmingDelete(false);
         }}
       />
-
-      {/* Guest name dialog */}
-      {claimingGiftId && (
-        <GuestNameModal
-          initialName={storageHelper.load(
-            storageHelper.STORAGE_KEYS.guestName,
-            "",
-            z.string(),
-          )}
-          onConfirm={handleGuestClaim}
-          onClose={() => {
-            setClaimingGiftId(null);
-          }}
-          onSignIn={() => {
-            setClaimingGiftId(null);
-            setShowSignIn(true);
-          }}
-        />
-      )}
 
       {showSignIn && (
         <SignInModal
