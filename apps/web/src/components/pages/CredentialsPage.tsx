@@ -9,11 +9,8 @@ import {
   type RegisterCredentials,
 } from "@repo/types";
 import { CredentialsButton, CredentialsField, ToastError } from "@repo/ui";
-import {
-  DEFAULT_CALLBACK_URL,
-  login as onLogin,
-  register as onRegister,
-} from "@/lib/auth";
+import { login as onLogin, register as onRegister } from "@/lib/auth";
+import { DEFAULT_CALLBACK_URL } from "@/utils/redirectHelper";
 
 interface CredentialsPageProps {
   /** Where to go once signed in (also used by the verification email). */

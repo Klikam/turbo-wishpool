@@ -5,6 +5,7 @@ import {
   GUEST_TOKEN_MAX_AGE,
   generateGuestToken,
 } from "@/lib/guestToken";
+import { NEXT_PARAM } from "@/utils/redirectHelper";
 
 const protectedRoutes = ["/dashboard", "/create"];
 
@@ -21,6 +22,13 @@ export function proxy(req: NextRequest) {
     // the error so the landing page can explain it.
     const error = req.nextUrl.searchParams.get("error");
     if (error) home.searchParams.set("error", error);
+    // Come back here after signing in; the dashboard is the default anyway.
+    if (req.nextUrl.pathname !== "/dashboard") {
+      home.searchParams.set(
+        NEXT_PARAM,
+        req.nextUrl.pathname + req.nextUrl.search,
+      );
+    }
     return NextResponse.redirect(home);
   }
 

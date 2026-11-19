@@ -1,6 +1,11 @@
 import { SignInForm } from "@/components/sections/SignInForm";
 
-export default function AuthPage() {
+interface AuthPageProps {
+  /** Where to go once signed in. */
+  callbackURL?: string;
+}
+
+export default function AuthPage({ callbackURL }: AuthPageProps) {
   return (
     <div className="flex-1 flex items-center justify-center p-8 lg:p-16">
       <div className="w-full max-w-sm">
@@ -13,7 +18,7 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <SignInForm />
+        <SignInForm callbackURL={callbackURL} />
       </div>
     </div>
   );

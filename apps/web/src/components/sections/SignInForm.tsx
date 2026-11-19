@@ -3,11 +3,8 @@
 import { useEffect, useState } from "react";
 import { SocialButton, ToastError } from "@repo/ui";
 import CredentialsPage from "@/components/pages/CredentialsPage";
-import {
-  DEFAULT_CALLBACK_URL,
-  socialSignIn,
-  type SocialProvider,
-} from "@/lib/auth";
+import { socialSignIn, type SocialProvider } from "@/lib/auth";
+import { DEFAULT_CALLBACK_URL } from "@/utils/redirectHelper";
 
 // Sent by better-auth as `?error=` when the email verification link or a
 // social sign-in fails.

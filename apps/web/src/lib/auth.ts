@@ -1,14 +1,11 @@
 import type { RegisterCredentials, SignInCredentials } from "@repo/types";
 import { authClient } from "@/lib/auth-client";
+import { DEFAULT_CALLBACK_URL } from "@/utils/redirectHelper";
 
 type AuthResult = { ok: true } | { ok: false; error: string };
 
 const FORBIDDEN = 403;
 const TOO_MANY_REQUESTS = 429;
-
-// Where the user lands signed in, unless a caller asks for somewhere else
-// (e.g. back to a shared wishlist). Also the target of the verification email.
-export const DEFAULT_CALLBACK_URL = "/dashboard";
 
 /**
  * Creates the account and emails a verification link; nobody is signed in yet.
