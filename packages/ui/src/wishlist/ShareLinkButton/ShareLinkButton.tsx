@@ -5,9 +5,19 @@ import { Check, Copy } from "lucide-react";
 
 interface ShareLinkButtonProps {
   url: string;
+  /** Shown in the share sheet, e.g. the wishlist's title. */
+  title?: string;
 }
 
-export function ShareLinkButton({ url }: ShareLinkButtonProps) {
+/** Phones (touch screens) get the system share sheet; elsewhere it copies. */
+function canUseShareSheet() {
+  return (
+    typeof navigator.share === "function" &&
+    window.matchMedia("(pointer: coarse)").matches
+  );
+}
+
+export function ShareLinkButton({ url, title }: ShareLinkButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function copyLink() {
@@ -18,9 +28,20 @@ export function ShareLinkButton({ url }: ShareLinkButtonProps) {
     }, 2000);
   }
 
+  async function share() {
+    if (!canUseShareSheet()) return copyLink();
+    try {
+      await navigator.share({ title, url });
+    } catch (error) {
+      // Closing the sheet is not a failure; anything else falls back to copying.
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      await copyLink();
+    }
+  }
+
   return (
     <button
-      onClick={() => void copyLink()}
+      onClick={() => void share()}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:bg-secondary transition-colors"
     >
       {copied ? (

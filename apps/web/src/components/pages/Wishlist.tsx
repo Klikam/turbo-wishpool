@@ -152,6 +152,7 @@ export default function Wishlist({ wishlist, isSignedIn }: WishlistViewProps) {
           <div className="flex items-center gap-2">
             <ShareLinkButton
               url={`${typeof window === "undefined" ? "" : window.location.origin}/wishlist/${wishlistId}`}
+              title={wishlist.title}
             />
             {!isSignedIn && (
               <button
