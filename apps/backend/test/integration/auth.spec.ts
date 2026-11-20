@@ -363,6 +363,100 @@ describe('better-auth configuration (real Postgres)', () => {
     });
   });
 
+  describe('changing the email', () => {
+    const emailOf = async (name = 'Ann') =>
+      (await ctx.db.select().from(usersTable)).find((u) => u.name === name)!;
+    const tokenIn = (url: string) =>
+      new URL(url).searchParams.get('token') as string;
+
+    it('emails the new address and only switches once its link is opened', async () => {
+      await register();
+      const { token } = await signIn();
+      verificationMails.mockClear();
+
+      await auth.api.changeEmail({
+        body: { newEmail: 'Anna@Example.com', callbackURL: '/account' },
+        headers: bearer(token),
+      });
+
+      // The link goes to the new (lower-cased) address, nothing changed yet.
+      expect(verificationMails).toHaveBeenCalledOnce();
+      const mail = verificationMails.mock.calls[0]![0] as {
+        to: string;
+        url: string;
+      };
+      expect(mail.to).toBe('anna@example.com');
+      expect(mail.url).toContain('callbackURL=%2Faccount');
+      expect(await emailOf()).toMatchObject({
+        email: 'ann@example.com',
+        emailVerified: true,
+      });
+
+      await auth.api.verifyEmail({ query: { token: tokenIn(mail.url) } });
+
+      expect(await emailOf()).toMatchObject({
+        email: 'anna@example.com',
+        emailVerified: true,
+      });
+      await expect(
+        signIn('anna@example.com'),
+      ).resolves.toBeDefined();
+      await expect(signIn('ann@example.com')).rejects.toMatchObject({
+        statusCode: 401,
+      });
+    });
+
+    it('answers the same for an address that is taken, and changes nothing', async () => {
+      await register();
+      await ctx.db.insert(usersTable).values({
+        name: 'Bob',
+        email: 'bob@example.com',
+        emailVerified: true,
+      });
+      const { token } = await signIn();
+      verificationMails.mockClear();
+
+      await expect(
+        auth.api.changeEmail({
+          body: { newEmail: 'bob@example.com' },
+          headers: bearer(token),
+        }),
+      ).resolves.toMatchObject({ status: true });
+      await noMailSoon();
+
+      expect(verificationMails).not.toHaveBeenCalled();
+      expect((await emailOf()).email).toBe('ann@example.com');
+      expect((await emailOf('Bob')).email).toBe('bob@example.com');
+    });
+
+    it.each([
+      ['the current address', 'ann@example.com'],
+      ['something that is not an address', 'not-an-email'],
+      // Longer than the database column: a 500 before the check existed.
+      ['an address over 255 characters', `${'a'.repeat(250)}@example.com`],
+    ])('rejects %s with a 400', async (_, newEmail) => {
+      await register();
+      const { token } = await signIn();
+      verificationMails.mockClear();
+
+      await expect(
+        auth.api.changeEmail({ body: { newEmail }, headers: bearer(token) }),
+      ).rejects.toMatchObject({ statusCode: 400 });
+
+      expect(verificationMails).not.toHaveBeenCalled();
+      expect((await emailOf()).email).toBe('ann@example.com');
+    });
+
+    it('needs a signed-in user', async () => {
+      await expect(
+        auth.api.changeEmail({
+          body: { newEmail: 'anna@example.com' },
+          headers: new Headers(),
+        }),
+      ).rejects.toMatchObject({ statusCode: 401 });
+    });
+  });
+
   describe('deleting the account', () => {
     it('needs the password and removes everything the user owns', async () => {
       await register();

@@ -19,6 +19,8 @@ const BCRYPT_ROUNDS = 10;
 const NAME_MIN = 2;
 const NAME_MAX = 100;
 const NAME_ENDPOINTS = ['/sign-up/email', '/update-user'];
+// The users.email column; a longer address is a 500 instead of a 400.
+const EMAIL_MAX = 255;
 
 export interface AuthConfig {
   /** Public origin of the web app. */
@@ -56,10 +58,21 @@ export function createAuth(db: Database, config: AuthConfig) {
     // wishlists and gifts reference.
     advanced: { database: { generateId: 'serial' } },
     hooks: {
-      // Rejects a name the web forms would never send, with a 400 instead of
-      // a database error. Only endpoints where the user types the name:
-      // social sign-in takes whatever the provider reports.
+      // Rejects a name or address the web forms would never send, with a 400
+      // instead of a database error. Only endpoints where the user types the
+      // name: social sign-in takes whatever the provider reports.
       before: createAuthMiddleware((ctx) => {
+        if (ctx.path === '/change-email') {
+          const { newEmail } = (ctx.body ?? {}) as { newEmail?: unknown };
+          if (typeof newEmail === 'string' && newEmail.length > EMAIL_MAX) {
+            throw new APIError('BAD_REQUEST', {
+              code: 'INVALID_EMAIL',
+              message: `Email must be at most ${EMAIL_MAX.toString()} characters`,
+            });
+          }
+          return Promise.resolve();
+        }
+
         if (!NAME_ENDPOINTS.includes(ctx.path)) return Promise.resolve();
 
         const { name } = (ctx.body ?? {}) as { name?: unknown };
@@ -148,6 +161,12 @@ export function createAuth(db: Database, config: AuthConfig) {
       }),
     },
     user: {
+      // POST /api/auth/change-email. The address only changes (and counts as
+      // verified) once the link emailed to the NEW address is opened, via the
+      // verification email above. An address that already belongs to someone
+      // gets the same answer as a free one, so it can't be used to find out
+      // who has an account.
+      changeEmail: { enabled: true },
       // POST /api/auth/delete-user. It needs the password, or for accounts
       // without one (social sign-in) a session from the last day. Wishlists,
       // sessions, accounts, reservations and gift requests go with the user

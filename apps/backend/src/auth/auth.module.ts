@@ -21,7 +21,7 @@ import { createAuth, type OAuthCredentials } from './auth.config';
             mail.sendInBackground({
               to,
               subject: 'Verify your email for Wishpool',
-              text: `Welcome to Wishpool! Confirm your email address by opening this link:\n\n${url}\n\nIf you didn't create an account, you can ignore this email.`,
+              text: `Confirm your email address for Wishpool by opening this link:\n\n${url}\n\nIf you didn't ask for this, you can ignore this email.`,
             }),
           sendResetPasswordEmail: ({ to, url }) =>
             mail.sendInBackground({
