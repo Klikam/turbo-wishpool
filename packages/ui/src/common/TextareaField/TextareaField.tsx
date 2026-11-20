@@ -4,6 +4,8 @@ interface TextareaFieldProps {
   onChange: (value: string) => void;
   placeholder?: string;
   rows?: number;
+  /** Stops typing at this many characters (the backend's limit). */
+  maxLength?: number;
 }
 
 export function TextareaField({
@@ -12,6 +14,7 @@ export function TextareaField({
   onChange,
   placeholder,
   rows = 3,
+  maxLength,
 }: TextareaFieldProps) {
   const id = label.trim().replaceAll(" ", "").toLowerCase();
   return (
@@ -24,6 +27,7 @@ export function TextareaField({
         rows={rows}
         className="w-full px-4 py-3 rounded-xl bg-card border border-border text-sm outline-none focus:border-[#C4797A] transition-colors resize-none"
         placeholder={placeholder}
+        maxLength={maxLength}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

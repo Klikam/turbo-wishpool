@@ -15,6 +15,7 @@ export function OccasionPicker({
       <div className="grid grid-cols-4 gap-2">
         {occasions.map((occ) => (
           <button
+            type="button"
             key={occ}
             onClick={() => {
               onChange(occ);

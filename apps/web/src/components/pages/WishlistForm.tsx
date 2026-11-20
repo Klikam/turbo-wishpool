@@ -69,7 +69,8 @@ export default function WishlistForm(props: WishlistFormProps) {
         },
   );
 
-  async function handleSubmit() {
+  async function handleSubmit(e: React.SyntheticEvent) {
+    e.preventDefault();
     if (!form.title.trim() || submitting) return;
 
     setSubmitting(true);
@@ -113,10 +114,14 @@ export default function WishlistForm(props: WishlistFormProps) {
             : "Create your list and share the link with friends and family."}
         </p>
 
-        <div className="flex flex-col gap-4">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="flex flex-col gap-4"
+        >
           <TextField
             label="List title *"
             placeholder="Emma's 30th Birthday"
+            maxLength={255}
             value={form.title}
             onChange={(title) => {
               setForm({ ...form, title });
@@ -159,6 +164,7 @@ export default function WishlistForm(props: WishlistFormProps) {
           <TextareaField
             label="A note for your guests"
             placeholder="Thanks for celebrating with me! Anything on this list would make me so happy…"
+            maxLength={2000}
             value={form.description}
             onChange={(description) => {
               setForm({ ...form, description });
@@ -166,13 +172,13 @@ export default function WishlistForm(props: WishlistFormProps) {
           />
 
           <button
-            onClick={() => void handleSubmit()}
+            type="submit"
             disabled={!form.title.trim() || submitting}
             className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-[#3a1232] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {editing ? "Save changes" : "Create wishlist"}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

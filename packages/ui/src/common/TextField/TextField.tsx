@@ -5,6 +5,8 @@ interface TextFieldProps {
   placeholder?: string;
   type?: React.HTMLInputTypeAttribute;
   compact?: boolean;
+  /** Stops typing at this many characters (the backend's limit). */
+  maxLength?: number;
 }
 
 export function TextField({
@@ -14,6 +16,7 @@ export function TextField({
   placeholder,
   type = "text",
   compact = false,
+  maxLength,
 }: TextFieldProps) {
   const id = label.trim().replaceAll(" ", "").toLowerCase();
   return (
@@ -33,6 +36,7 @@ export function TextField({
             : "px-4 py-3 rounded-xl bg-card"
         }`}
         placeholder={placeholder}
+        maxLength={maxLength}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);

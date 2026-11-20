@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 
-// Shown at once while the dashboard loads its lists on the server. Not used
-// for wishlist pages: streaming would send a missing list as 200, not 404.
+// Shown at once while the dashboard loads its lists on the server. Wishlist
+// pages have their own skeleton (see wishlist/[id]/loading.tsx).
 export default function Loading() {
   return (
     <div className="flex-1 flex items-center justify-center" role="status">

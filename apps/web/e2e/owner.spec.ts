@@ -47,6 +47,53 @@ test.describe("owner: wishlists", () => {
     ).toBeEnabled();
   });
 
+  test("creates a wishlist when Enter is pressed in the title", async ({
+    page,
+  }) => {
+    await page.goto("/create");
+
+    await page.getByLabel("List title *").fill("Baby shower");
+    await page.getByLabel("List title *").press("Enter");
+
+    await expect(page).toHaveURL(/\/wishlist\/[0-9a-f-]{36}$/);
+    await expect(
+      page.getByRole("heading", { name: "Baby shower" }),
+    ).toBeVisible();
+  });
+
+  test("does not submit with Enter while the title is empty", async ({
+    page,
+  }) => {
+    await page.goto("/create");
+
+    await page.getByLabel("List title *").press("Enter");
+
+    await expect(page).toHaveURL(/\/create$/);
+  });
+
+  test("picking an occasion does not submit the form", async ({ page }) => {
+    await page.goto("/create");
+
+    await page.getByLabel("List title *").fill("Party");
+    await page.getByRole("button", { name: "Wedding" }).click();
+
+    await expect(page).toHaveURL(/\/create$/);
+  });
+
+  test("stops typing at the length the backend accepts", async ({ page }) => {
+    await page.goto("/create");
+
+    await page.getByLabel("List title *").fill("a".repeat(300));
+    await page.getByLabel("A note for your guests").fill("b".repeat(2100));
+
+    await expect(page.getByLabel("List title *")).toHaveValue(
+      "a".repeat(255),
+    );
+    await expect(page.getByLabel("A note for your guests")).toHaveValue(
+      "b".repeat(2000),
+    );
+  });
+
   test("suggests a currency from the browser language", async ({ browser }) => {
     const context = await browser.newContext({ locale: "pl-PL" });
     await context.addCookies([
@@ -183,6 +230,28 @@ test.describe("owner: gifts", () => {
     await expect(card.getByRole("link", { name: /View item/ })).toHaveAttribute(
       "href",
       "https://shop.test/grinder",
+    );
+  });
+
+  test("saves a gift with Enter, completing a link typed without https", async ({
+    page,
+  }) => {
+    await page.goto(LIST);
+
+    await page.getByRole("button", { name: "Add gift" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Gift name *").fill("Teapot");
+    await dialog.getByLabel("Link (URL)").fill("shop.test/teapot");
+    await dialog.getByLabel("Link (URL)").press("Enter");
+
+    // No native "enter a URL" bubble in the way: the dialog closes.
+    await expect(dialog).toBeHidden();
+    const card = page.locator("div.rounded-2xl", {
+      has: page.getByRole("heading", { name: "Teapot" }),
+    });
+    await expect(card.getByRole("link", { name: /View item/ })).toHaveAttribute(
+      "href",
+      "https://shop.test/teapot",
     );
   });
 
