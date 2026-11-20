@@ -3,6 +3,7 @@
 // without a database or an SMTP server. It mimics only the endpoints the
 // tests need, with the same response shapes as apps/backend.
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 import process from "node:process";
 
 // Usage: node stub-backend.mjs [port]
@@ -40,6 +41,7 @@ function reset() {
         currency: "EUR",
       },
     ],
+    requests: [],
     gifts: [
       {
         id: GIFT_IDS.headphones,
@@ -78,6 +80,10 @@ const readBody = (req) =>
     req.on("end", () => resolve(data ? JSON.parse(data) : {}));
   });
 
+const userById = (id) => Object.values(users).find((u) => u.id === id);
+const pending = (gift) =>
+  state.requests.filter((r) => r.giftId === gift.id && r.status === "pending");
+
 function publicGift(gift, viewer, isOwner) {
   const holders = isOwner
     ? []
@@ -92,8 +98,20 @@ function publicGift(gift, viewer, isOwner) {
     reserved: holders.length > 0,
     reservedByMe: holders.some((u) => u.id === viewer.id),
     reservers: holders.map((u) => ({ name: u.name, isMe: u.id === viewer.id })),
-    myRequest: null,
-    incomingRequests: [],
+    myRequest: (() => {
+      const mine = pending(gift).find((r) => r.requesterId === viewer.id);
+      return mine ? { id: mine.id, type: mine.type } : null;
+    })(),
+    // Only the holders see requests, and never their own.
+    incomingRequests: holders.some((u) => u.id === viewer.id)
+      ? pending(gift)
+          .filter((r) => r.requesterId !== viewer.id)
+          .map((r) => ({
+            id: r.id,
+            type: r.type,
+            requesterName: userById(r.requesterId).name,
+          }))
+      : [],
   };
 }
 
@@ -125,6 +143,12 @@ createServer(async (req, res) => {
         "Set-Cookie": `better-auth.session_token=${user.token}; Path=/; HttpOnly; SameSite=Lax`,
       },
     );
+  }
+
+  if (path === "/api/auth/sign-up/email" && req.method === "POST") {
+    const { name, email } = await readBody(req);
+    // Like better-auth: nobody is signed in until the email is verified.
+    return json(res, 200, { token: null, user: { id: 99, name, email } });
   }
 
   if (path === "/api/auth/sign-out" && req.method === "POST") {
@@ -247,6 +271,154 @@ createServer(async (req, res) => {
           message: "You have no reservation on this gift",
         });
       gift.reservers = gift.reservers.filter((id) => id !== viewer.id);
+      return json(res, 204);
+    }
+  }
+
+  // ---- Owner: wishlists and gifts -------------------------------------
+  const ownList = (id) =>
+    state.wishlists.find((w) => w.id === id && w.userId === viewer.id);
+
+  if (path === "/wishlists" && req.method === "POST") {
+    const body = await readBody(req);
+    if (!body.title?.trim()) {
+      return json(res, 400, { message: ["Enter a title for the wishlist"] });
+    }
+    const list = {
+      id: randomUUID(),
+      userId: viewer.id,
+      title: body.title,
+      occasion: body.occasion ?? null,
+      date: body.date ?? null,
+      note: body.note ?? null,
+      currency: body.currency ?? "EUR",
+    };
+    state.wishlists.push(list);
+    return json(res, 201, list);
+  }
+
+  const listRoute = path.match(/^\/wishlists\/([^/]+)$/);
+  if (listRoute && ["PATCH", "DELETE"].includes(req.method)) {
+    const list = ownList(listRoute[1]);
+    if (!list) return json(res, 404, { message: "Wishlist not found" });
+    if (req.method === "DELETE") {
+      state.wishlists = state.wishlists.filter((w) => w !== list);
+      state.gifts = state.gifts.filter((g) => g.wishlistId !== list.id);
+      return json(res, 204);
+    }
+    Object.assign(list, await readBody(req));
+    return json(res, 200, list);
+  }
+
+  const giftsRoute = path.match(/^\/wishlists\/([^/]+)\/gifts(?:\/([^/]+))?$/);
+  if (giftsRoute) {
+    const list = ownList(giftsRoute[1]);
+    if (!list) return json(res, 404, { message: "Wishlist not found" });
+    const gift = state.gifts.find(
+      (g) => g.id === giftsRoute[2] && g.wishlistId === list.id,
+    );
+
+    if (req.method === "POST" && !giftsRoute[2]) {
+      const body = await readBody(req);
+      if (!body.name?.trim()) {
+        return json(res, 400, { message: ["Enter a gift name"] });
+      }
+      const created = {
+        id: randomUUID(),
+        wishlistId: list.id,
+        name: body.name,
+        description: body.description ?? null,
+        price: body.price ?? null,
+        url: body.url ?? null,
+        imageUrl: body.imageUrl ?? null,
+        reservers: [],
+      };
+      state.gifts.push(created);
+      return json(res, 201, { id: created.id });
+    }
+    if (!gift) return json(res, 404, { message: "Gift not found" });
+    if (req.method === "PATCH") {
+      Object.assign(gift, await readBody(req));
+      return json(res, 200, { id: gift.id });
+    }
+    if (req.method === "DELETE") {
+      state.gifts = state.gifts.filter((g) => g !== gift);
+      return json(res, 204);
+    }
+  }
+
+  // ---- Visitors: requests to the people who reserved a gift ------------
+  const requestsRoute = path.match(
+    /^\/public\/wishlists\/([^/]+)\/gifts\/([^/]+)\/requests(?:\/([^/]+))?$/,
+  );
+  if (requestsRoute) {
+    const list = state.wishlists.find((w) => w.id === requestsRoute[1]);
+    const gift = state.gifts.find(
+      (g) => g.id === requestsRoute[2] && g.wishlistId === list?.id,
+    );
+    if (!gift) return json(res, 404, { message: "Gift not found" });
+    const request = state.requests.find((r) => r.id === requestsRoute[3]);
+
+    if (req.method === "POST") {
+      const { type } = await readBody(req);
+      if (list.userId === viewer.id) {
+        return json(res, 403, { message: "You cannot ask for your own gifts" });
+      }
+      if (gift.reservers.length === 0) {
+        return json(res, 409, {
+          message: "Gift is not reserved, just claim it",
+        });
+      }
+      if (gift.reservers.includes(viewer.id)) {
+        return json(res, 409, { message: "You already reserved this gift" });
+      }
+      if (type === "release" && gift.reservers.length > 1) {
+        return json(res, 409, {
+          message: "This gift is shared; ask to share it instead",
+        });
+      }
+      if (pending(gift).some((r) => r.requesterId === viewer.id)) {
+        return json(res, 409, {
+          message: "You already have a pending request",
+        });
+      }
+      const created = {
+        id: randomUUID(),
+        giftId: gift.id,
+        requesterId: viewer.id,
+        type,
+        status: "pending",
+      };
+      state.requests.push(created);
+      return json(res, 201, { id: created.id });
+    }
+
+    if (!request || request.status !== "pending") {
+      return json(res, 404, { message: "Request not found" });
+    }
+    if (req.method === "DELETE") {
+      if (request.requesterId !== viewer.id) {
+        return json(res, 404, { message: "Request not found" });
+      }
+      state.requests = state.requests.filter((r) => r !== request);
+      return json(res, 204);
+    }
+    if (req.method === "PUT") {
+      const { accept } = await readBody(req);
+      if (!gift.reservers.includes(viewer.id)) {
+        return json(res, 403, {
+          message: "Only the people who reserved can answer",
+        });
+      }
+      request.status = accept ? "accepted" : "declined";
+      if (accept) {
+        if (request.type === "release") {
+          gift.reservers = gift.reservers.filter((id) => id !== viewer.id);
+        }
+        if (!gift.reservers.includes(request.requesterId)) {
+          gift.reservers.push(request.requesterId);
+        }
+      }
       return json(res, 204);
     }
   }
