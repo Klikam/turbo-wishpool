@@ -24,9 +24,9 @@ export const WISHLIST_MESSAGES = {
 };
 
 export class CreateWishlistDto {
-  @IsString(WISHLIST_MESSAGES.titleRequired)
-  @IsNotEmpty(WISHLIST_MESSAGES.titleRequired)
   @MaxLength(255, WISHLIST_MESSAGES.titleTooLong)
+  @IsNotEmpty(WISHLIST_MESSAGES.titleRequired)
+  @IsString(WISHLIST_MESSAGES.titleRequired)
   title!: string;
 
   @IsOptional()
@@ -38,8 +38,8 @@ export class CreateWishlistDto {
   date?: string;
 
   @IsOptional()
-  @IsString()
   @MaxLength(2000, { message: 'The note can be at most 2000 characters' })
+  @IsString()
   note?: string;
 
   /** Defaults to EUR. */

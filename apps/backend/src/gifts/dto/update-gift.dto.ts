@@ -9,8 +9,8 @@ export class UpdateGiftDto extends PartialType(
   OmitType(CreateGiftDto, ['name'] as const),
 ) {
   @ValidateIf((_, value) => value !== undefined)
-  @IsString(GIFT_NAME_MESSAGES.required)
-  @IsNotEmpty(GIFT_NAME_MESSAGES.required)
   @MaxLength(255, GIFT_NAME_MESSAGES.tooLong)
+  @IsNotEmpty(GIFT_NAME_MESSAGES.required)
+  @IsString(GIFT_NAME_MESSAGES.required)
   name?: string;
 }

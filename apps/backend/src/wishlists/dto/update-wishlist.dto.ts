@@ -20,9 +20,9 @@ export class UpdateWishlistDto extends PartialType(
   OmitType(CreateWishlistDto, ['title', 'currency'] as const),
 ) {
   @ValidateIf((_, value) => value !== undefined)
-  @IsString(WISHLIST_MESSAGES.titleRequired)
-  @IsNotEmpty(WISHLIST_MESSAGES.titleRequired)
   @MaxLength(255, WISHLIST_MESSAGES.titleTooLong)
+  @IsNotEmpty(WISHLIST_MESSAGES.titleRequired)
+  @IsString(WISHLIST_MESSAGES.titleRequired)
   title?: string;
 
   @ValidateIf((_, value) => value !== undefined)
