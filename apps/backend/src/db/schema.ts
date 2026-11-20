@@ -153,10 +153,14 @@ export const giftRequestStatusEnum = pgEnum('gift_request_status', [
   'pending',
   'accepted',
   'declined',
+  // Taken back by the asker, or turned down automatically because the gift
+  // became shared (a release no single holder can grant).
+  'cancelled',
 ]);
 
-// A request to the people holding a reservation. Answered requests stay as a
-// record; only a pending one blocks the requester from asking again.
+// A request to the people holding a reservation. Answered and cancelled
+// requests stay as a record: a pending one blocks the requester from asking
+// again, and the latest one of any status starts their cooldown.
 export const giftRequestsTable = pgTable.withRLS(
   'gift_requests',
   {

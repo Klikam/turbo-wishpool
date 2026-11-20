@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import { DrizzleAsyncProvider } from '../drizzle/drizzle.provider';
 import {
@@ -26,6 +26,9 @@ import { MailService } from '../mail/mail.service';
 
 type GiftRow = typeof giftsTable.$inferSelect;
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+// How long after asking about a gift someone can ask about it again.
+const REQUEST_COOLDOWN_MS = 60 * 60 * 1000;
 
 interface Reserver {
   userId: number;
@@ -210,18 +213,31 @@ export class PublicService {
             'This gift is shared; ask to share it instead',
           );
 
-        const [pending] = await tx
-          .select({ id: giftRequestsTable.id })
+        const [latest] = await tx
+          .select({
+            status: giftRequestsTable.status,
+            createdAt: giftRequestsTable.createdAt,
+          })
           .from(giftRequestsTable)
           .where(
             and(
               eq(giftRequestsTable.giftId, giftId),
               eq(giftRequestsTable.requesterId, userId),
-              eq(giftRequestsTable.status, 'pending'),
             ),
-          );
-        if (pending)
+          )
+          .orderBy(desc(giftRequestsTable.createdAt))
+          .limit(1);
+        if (latest?.status === 'pending')
           throw new ConflictException('You already have a pending request');
+        // Each request emails the holders, so asking, taking back and asking
+        // again can't be repeated at will.
+        if (
+          latest &&
+          Date.now() - latest.createdAt.getTime() < REQUEST_COOLDOWN_MS
+        )
+          throw new ConflictException(
+            'You asked about this gift recently; you can ask again in an hour',
+          );
 
         const [request] = await tx
           .insert(giftRequestsTable)
@@ -262,10 +278,14 @@ export class PublicService {
     return request;
   }
 
-  /** Takes back the asker's own pending request. */
+  /**
+   * Takes back the asker's own pending request. It stays as a record, which
+   * is what the cooldown on asking again is measured from.
+   */
   async cancelRequest(giftId: string, requestId: string, userId: number) {
     const deleted = await this.db
-      .delete(giftRequestsTable)
+      .update(giftRequestsTable)
+      .set({ status: 'cancelled', respondedAt: new Date() })
       .where(
         and(
           eq(giftRequestsTable.id, requestId),
@@ -335,6 +355,23 @@ export class PublicService {
           .insert(giftReservationsTable)
           .values({ giftId, userId: request.requesterId })
           .onConflictDoNothing();
+
+        // With several holders no one can free the gift alone any more, so
+        // requests to free it can't be granted. They are turned down here
+        // instead of staying open with an Accept that would hand the gift
+        // to one asker while the other holders keep it.
+        if (request.type === 'share') {
+          await tx
+            .update(giftRequestsTable)
+            .set({ status: 'cancelled', respondedAt: new Date() })
+            .where(
+              and(
+                eq(giftRequestsTable.giftId, giftId),
+                eq(giftRequestsTable.type, 'release'),
+                eq(giftRequestsTable.status, 'pending'),
+              ),
+            );
+        }
       }
 
       const [[requester], [responder], [wishlist]] = await Promise.all([

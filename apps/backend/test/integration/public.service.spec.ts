@@ -12,6 +12,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { giftRequestsTable } from '../../src/db/schema';
 import { PublicService } from '../../src/public/public.service';
 import {
   allReservations,
@@ -323,13 +324,46 @@ describe('PublicService (real Postgres)', () => {
       ).id;
     });
 
-    it('lets the asker take it back, so they can ask again', async () => {
+    it('lets the asker take it back, keeping it as a record', async () => {
       await service.cancelRequest(giftId, requestId, bob.id);
 
-      expect(await allRequests(ctx.db)).toEqual([]);
+      expect(await allRequests(ctx.db)).toMatchObject([
+        { id: requestId, status: 'cancelled' },
+      ]);
+      // A taken-back request can't be taken back again.
+      await expect(
+        service.cancelRequest(giftId, requestId, bob.id),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('does not let the asker ask again right away, only after the cooldown', async () => {
+      await service.cancelRequest(giftId, requestId, bob.id);
+
+      await expect(
+        service.createRequest(wishlistId, giftId, bob.id, 'share'),
+      ).rejects.toThrow(/recently/);
+
+      // As if the request had been made over an hour ago.
+      await ctx.db
+        .update(giftRequestsTable)
+        .set({ createdAt: new Date(Date.now() - 61 * 60 * 1000) });
       await expect(
         service.createRequest(wishlistId, giftId, bob.id, 'share'),
       ).resolves.toBeDefined();
+    });
+
+    it('applies the cooldown after a decline too, and per gift', async () => {
+      await service.respondToRequest(
+        wishlistId,
+        giftId,
+        requestId,
+        ann.id,
+        false,
+      );
+
+      await expect(
+        service.createRequest(wishlistId, giftId, bob.id, 'share'),
+      ).rejects.toThrow(/recently/);
     });
 
     it('is not available to anyone else, nor for a wrong gift', async () => {
@@ -393,6 +427,29 @@ describe('PublicService (real Postgres)', () => {
       expect(
         (await allReservations(ctx.db)).map((r) => r.userId).sort(),
       ).toEqual([ann.id, bob.id].sort());
+    });
+
+    it('accepting a share turns down open requests to free the gift', async () => {
+      const shareId = await ask('share');
+      const releaseId = (
+        await service.createRequest(wishlistId, giftId, cid.id, 'release')
+      ).id;
+
+      await service.respondToRequest(
+        wishlistId,
+        giftId,
+        shareId,
+        ann.id,
+        true,
+      );
+
+      const statuses = Object.fromEntries(
+        (await allRequests(ctx.db)).map((r) => [r.id, r.status]),
+      );
+      expect(statuses).toEqual({ [shareId]: 'accepted', [releaseId]: 'cancelled' });
+      // Gone from the holders' list, so there is nothing left to accept.
+      const wishlist = await service.getWishlist(wishlistId, ann.id);
+      expect(wishlist.gifts[0]!.incomingRequests).toEqual([]);
     });
 
     it('declining changes nothing but the status, and tells the asker', async () => {

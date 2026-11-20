@@ -1,0 +1,1 @@
+ALTER TYPE "gift_request_status" ADD VALUE 'cancelled';
