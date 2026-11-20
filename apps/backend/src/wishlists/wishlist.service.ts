@@ -6,6 +6,14 @@ import { giftsTable, wishlistsTable } from '../db/schema';
 import { giftsOrder, ownerGiftColumns } from '../gifts/gift.columns';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
+import { isPastWishlist } from './wishlist-status';
+
+/** Adds `isPast`, which is derived (see wishlist-status.ts), not stored. */
+function withStatus<T extends { date: string | null; closed: boolean }>(
+  wishlist: T,
+) {
+  return { ...wishlist, isPast: isPastWishlist(wishlist) };
+}
 
 @Injectable()
 export class WishlistService {
@@ -20,12 +28,12 @@ export class WishlistService {
       .values({ ...dto, userId })
       .returning();
 
-    return wishlist;
+    return wishlist && withStatus(wishlist);
   }
 
   async findAll(userId: number) {
     // Lists without a date go last (Postgres puts nulls first in desc).
-    return this.db
+    const wishlists = await this.db
       .select({
         ...getColumns(wishlistsTable),
         giftsCount: count(giftsTable.id),
@@ -38,6 +46,13 @@ export class WishlistService {
         sql`${wishlistsTable.date} desc nulls last`,
         desc(wishlistsTable.createdAt),
       );
+
+    // Past lists sink below the rest, keeping their order among themselves.
+    const withStatuses = wishlists.map(withStatus);
+    return [
+      ...withStatuses.filter((w) => !w.isPast),
+      ...withStatuses.filter((w) => w.isPast),
+    ];
   }
 
   async findOne(userId: number, id: string) {
@@ -54,7 +69,7 @@ export class WishlistService {
       .where(eq(giftsTable.wishlistId, id))
       .orderBy(...giftsOrder);
 
-    return { ...wishlist, gifts };
+    return { ...withStatus(wishlist), gifts };
   }
 
   async update(userId: number, id: string, dto: UpdateWishlistDto) {
@@ -69,7 +84,7 @@ export class WishlistService {
 
     if (!wishlist) throw new NotFoundException('Wishlist not found');
 
-    return wishlist;
+    return withStatus(wishlist);
   }
 
   async remove(userId: number, id: string) {

@@ -41,6 +41,13 @@ export const WishlistSchema =z.object({
   note: z.string().nullable(),
   /** ISO 4217 code the gift prices are in. */
   currency: z.string(),
+  /**
+   * Past lists (the owner closed them, or their date has passed) are read-only
+   * for visitors: nobody can reserve or ask for gifts any more.
+   */
+  isPast: z.boolean(),
+  /** The owner closed the list; false for a list that is past only by date. */
+  closed: z.boolean(),
   gifts: z.array(GiftItemSchema),
 });
 
@@ -70,4 +77,6 @@ export interface WishlistSummary {
   date: string | null;
   note: string | null;
   giftsCount: number;
+  /** Closed by the owner, or its date has passed. */
+  isPast: boolean;
 }

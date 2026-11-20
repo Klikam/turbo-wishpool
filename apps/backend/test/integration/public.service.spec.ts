@@ -12,7 +12,8 @@ import {
   it,
   vi,
 } from 'vitest';
-import { giftRequestsTable } from '../../src/db/schema';
+import { eq } from 'drizzle-orm';
+import { giftRequestsTable, wishlistsTable } from '../../src/db/schema';
 import { PublicService } from '../../src/public/public.service';
 import {
   allReservations,
@@ -325,19 +326,19 @@ describe('PublicService (real Postgres)', () => {
     });
 
     it('lets the asker take it back, keeping it as a record', async () => {
-      await service.cancelRequest(giftId, requestId, bob.id);
+      await service.cancelRequest(wishlistId, giftId, requestId, bob.id);
 
       expect(await allRequests(ctx.db)).toMatchObject([
         { id: requestId, status: 'cancelled' },
       ]);
       // A taken-back request can't be taken back again.
       await expect(
-        service.cancelRequest(giftId, requestId, bob.id),
+        service.cancelRequest(wishlistId, giftId, requestId, bob.id),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('does not let the asker ask again right away, only after the cooldown', async () => {
-      await service.cancelRequest(giftId, requestId, bob.id);
+      await service.cancelRequest(wishlistId, giftId, requestId, bob.id);
 
       await expect(
         service.createRequest(wishlistId, giftId, bob.id, 'share'),
@@ -368,10 +369,10 @@ describe('PublicService (real Postgres)', () => {
 
     it('is not available to anyone else, nor for a wrong gift', async () => {
       await expect(
-        service.cancelRequest(giftId, requestId, ann.id),
+        service.cancelRequest(wishlistId, giftId, requestId, ann.id),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        service.cancelRequest(MISSING, requestId, bob.id),
+        service.cancelRequest(wishlistId, MISSING, requestId, bob.id),
       ).rejects.toThrow(NotFoundException);
       expect(await allRequests(ctx.db)).toHaveLength(1);
     });
@@ -435,18 +436,15 @@ describe('PublicService (real Postgres)', () => {
         await service.createRequest(wishlistId, giftId, cid.id, 'release')
       ).id;
 
-      await service.respondToRequest(
-        wishlistId,
-        giftId,
-        shareId,
-        ann.id,
-        true,
-      );
+      await service.respondToRequest(wishlistId, giftId, shareId, ann.id, true);
 
       const statuses = Object.fromEntries(
         (await allRequests(ctx.db)).map((r) => [r.id, r.status]),
       );
-      expect(statuses).toEqual({ [shareId]: 'accepted', [releaseId]: 'cancelled' });
+      expect(statuses).toEqual({
+        [shareId]: 'accepted',
+        [releaseId]: 'cancelled',
+      });
       // Gone from the holders' list, so there is nothing left to accept.
       const wishlist = await service.getWishlist(wishlistId, ann.id);
       expect(wishlist.gifts[0]!.incomingRequests).toEqual([]);
@@ -510,6 +508,111 @@ describe('PublicService (real Postgres)', () => {
       );
 
       expect(await allReservations(ctx.db)).toHaveLength(2);
+    });
+  });
+
+  describe('a past wishlist', () => {
+    const daysAgo = (days: number) =>
+      new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+
+    const makePast = (how: 'closed' | 'date') =>
+      ctx.db
+        .update(wishlistsTable)
+        .set(how === 'closed' ? { closed: true } : { date: daysAgo(1) })
+        .where(eq(wishlistsTable.id, wishlistId));
+
+    it.each(['closed', 'date'] as const)(
+      'is shown as past to visitors and to the owner when it is %s',
+      async (how) => {
+        await makePast(how);
+
+        expect((await service.getWishlist(wishlistId, ann.id)).isPast).toBe(
+          true,
+        );
+        expect((await service.getWishlist(wishlistId, owner.id)).isPast).toBe(
+          true,
+        );
+      },
+    );
+
+    it('is not past on the day of the occasion', async () => {
+      await ctx.db
+        .update(wishlistsTable)
+        .set({ date: daysAgo(0) })
+        .where(eq(wishlistsTable.id, wishlistId));
+
+      expect((await service.getWishlist(wishlistId, ann.id)).isPast).toBe(
+        false,
+      );
+      await expect(
+        service.reserve(wishlistId, giftId, ann.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it.each(['closed', 'date'] as const)(
+      'refuses new reservations and requests when it is %s',
+      async (how) => {
+        await reserveGift(ctx.db, giftId, ann.id);
+        const other = (await createGift(ctx.db, wishlistId, { name: 'Pen' }))
+          .id;
+        await makePast(how);
+
+        await expect(
+          service.reserve(wishlistId, other, bob.id),
+        ).rejects.toThrow(/in the past/);
+        await expect(
+          service.createRequest(wishlistId, giftId, bob.id, 'share'),
+        ).rejects.toThrow(ForbiddenException);
+
+        expect(await allReservations(ctx.db)).toHaveLength(1);
+        expect(await allRequests(ctx.db)).toHaveLength(0);
+        expect(mail.sent).toHaveLength(0);
+      },
+    );
+
+    it('freezes what was already agreed: no undoing, taking back or answering', async () => {
+      await reserveGift(ctx.db, giftId, ann.id);
+      const requestId = (
+        await service.createRequest(wishlistId, giftId, bob.id, 'share')
+      ).id;
+      await makePast('closed');
+
+      await expect(
+        service.cancelReservation(wishlistId, giftId, ann.id),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.cancelRequest(wishlistId, giftId, requestId, bob.id),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.respondToRequest(wishlistId, giftId, requestId, ann.id, true),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(await allReservations(ctx.db)).toHaveLength(1);
+      expect(await allRequests(ctx.db)).toMatchObject([
+        { id: requestId, status: 'pending' },
+      ]);
+    });
+
+    it('works again once the owner reopens it', async () => {
+      await makePast('closed');
+      await expect(service.reserve(wishlistId, giftId, ann.id)).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      await ctx.db
+        .update(wishlistsTable)
+        .set({ closed: false })
+        .where(eq(wishlistsTable.id, wishlistId));
+
+      await expect(
+        service.reserve(wishlistId, giftId, ann.id),
+      ).resolves.toBeUndefined();
+    });
+
+    it('still reports a missing wishlist as not found', async () => {
+      await expect(
+        service.cancelReservation(MISSING, giftId, ann.id),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

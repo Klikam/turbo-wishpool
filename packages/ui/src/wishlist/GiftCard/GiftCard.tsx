@@ -47,6 +47,8 @@ interface GiftCardProps {
   busy?: boolean;
   /** Blocks the card's buttons, e.g. while another change is saving. */
   disabled?: boolean;
+  /** The list is past: visitors can no longer claim, ask or answer. */
+  locked?: boolean;
   onClaim: () => void;
   onUnclaim: () => void;
   onRequest?: (type: GiftRequestType) => void;
@@ -67,6 +69,7 @@ export function GiftCard({
   isMine,
   busy = false,
   disabled = false,
+  locked = false,
   reservers = [],
   pricePerPerson,
   pricePerPersonIfJoined,
@@ -203,7 +206,7 @@ export function GiftCard({
             </a>
           )}
 
-          {!isOwner && (
+          {!isOwner && !locked && (
             <div className="ml-auto">
               {!claimed ? (
                 <button
@@ -269,7 +272,7 @@ export function GiftCard({
           )}
         </div>
 
-        {!isOwner && isMine && incomingRequests.length > 0 && (
+        {!isOwner && !locked && isMine && incomingRequests.length > 0 && (
           <ul className="mt-3 space-y-2 border-t border-border pt-3">
             {incomingRequests.map((request) => (
               <li key={request.id} className="text-xs text-foreground">

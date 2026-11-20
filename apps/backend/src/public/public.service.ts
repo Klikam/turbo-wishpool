@@ -23,6 +23,7 @@ import {
   type GiftRequestType,
 } from '../mail/gift-request.mail';
 import { MailService } from '../mail/mail.service';
+import { isPastWishlist } from '../wishlists/wishlist-status';
 
 type GiftRow = typeof giftsTable.$inferSelect;
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -84,6 +85,7 @@ export class PublicService {
         date: wishlistsTable.date,
         note: wishlistsTable.note,
         currency: wishlistsTable.currency,
+        closed: wishlistsTable.closed,
         ownerName: usersTable.name,
         ownerId: wishlistsTable.userId,
       })
@@ -117,6 +119,7 @@ export class PublicService {
     return {
       ...publicWishlist,
       isOwner,
+      isPast: isPastWishlist(wishlist),
       gifts: gifts.map((gift) =>
         this.toPublicGift(
           gift,
@@ -149,6 +152,8 @@ export class PublicService {
   }
 
   async cancelReservation(wishlistId: string, giftId: string, userId: number) {
+    await this.assertOpen(wishlistId);
+
     await this.db.transaction(async (tx) => {
       await this.lockGift(tx, wishlistId, giftId);
 
@@ -282,7 +287,14 @@ export class PublicService {
    * Takes back the asker's own pending request. It stays as a record, which
    * is what the cooldown on asking again is measured from.
    */
-  async cancelRequest(giftId: string, requestId: string, userId: number) {
+  async cancelRequest(
+    wishlistId: string,
+    giftId: string,
+    requestId: string,
+    userId: number,
+  ) {
+    await this.assertOpen(wishlistId);
+
     const deleted = await this.db
       .update(giftRequestsTable)
       .set({ status: 'cancelled', respondedAt: new Date() })
@@ -311,6 +323,8 @@ export class PublicService {
     userId: number,
     accept: boolean,
   ) {
+    await this.assertOpen(wishlistId);
+
     const answer = await this.db.transaction(async (tx) => {
       const gift = await this.lockGift(tx, wishlistId, giftId);
 
@@ -412,20 +426,45 @@ export class PublicService {
     return `${base}/wishlist/${wishlistId}`;
   }
 
+  /** For visitors: the list must exist, be open, and not be the visitor's own. */
   private async assertNotOwner(
     wishlistId: string,
     userId: number,
     verb: string,
   ) {
+    const wishlist = await this.findWishlist(wishlistId);
+
+    if (userId === wishlist.userId)
+      throw new ForbiddenException(`You cannot ${verb} your own gifts`);
+
+    this.assertNotPast(wishlist);
+  }
+
+  /** The list must exist and be open; for changes that are not about ownership. */
+  private async assertOpen(wishlistId: string) {
+    this.assertNotPast(await this.findWishlist(wishlistId));
+  }
+
+  private assertNotPast(wishlist: { date: string | null; closed: boolean }) {
+    if (isPastWishlist(wishlist))
+      throw new ForbiddenException(
+        'This wishlist is in the past, so gifts can no longer be changed',
+      );
+  }
+
+  private async findWishlist(wishlistId: string) {
     const [wishlist] = await this.db
-      .select({ userId: wishlistsTable.userId })
+      .select({
+        userId: wishlistsTable.userId,
+        date: wishlistsTable.date,
+        closed: wishlistsTable.closed,
+      })
       .from(wishlistsTable)
       .where(eq(wishlistsTable.id, wishlistId));
 
     if (!wishlist) throw new NotFoundException('Wishlist not found');
 
-    if (userId === wishlist.userId)
-      throw new ForbiddenException(`You cannot ${verb} your own gifts`);
+    return wishlist;
   }
 
   /** Locks the gift's row for the transaction, serializing changes to it. */

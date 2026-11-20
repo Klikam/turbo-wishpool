@@ -9,7 +9,7 @@ import {
   it,
   vi,
 } from 'vitest';
-import { giftsTable } from '../../src/db/schema';
+import { giftsTable, wishlistsTable } from '../../src/db/schema';
 import { GiftService } from '../../src/gifts/gift.service';
 import type { LinkPreviewService } from '../../src/gifts/link-preview.service';
 import { ReservationNoticeService } from '../../src/mail/reservation-notices.service';
@@ -261,6 +261,32 @@ describe('GiftService (real Postgres)', () => {
         service.remove(other.id, wishlistId, gift.id),
       ).rejects.toThrow(NotFoundException);
       expect(await ctx.db.query.giftsTable.findMany()).toHaveLength(1);
+    });
+  });
+
+  describe('on a past wishlist', () => {
+    // Visitors are locked out of past lists (see PublicService); the owner is
+    // not, so a list can still be tidied or a forgotten gift added.
+    beforeEach(async () => {
+      await ctx.db
+        .update(wishlistsTable)
+        .set({ closed: true, date: '2020-01-01' })
+        .where(eq(wishlistsTable.id, wishlistId));
+    });
+
+    it('lets the owner add, edit and delete gifts', async () => {
+      const created = await service.create(owner.id, wishlistId, {
+        name: 'Souvenir',
+      });
+      expect(created).toMatchObject({ name: 'Souvenir' });
+
+      const edited = await service.update(owner.id, wishlistId, created!.id, {
+        name: 'Big souvenir',
+      });
+      expect(edited).toMatchObject({ name: 'Big souvenir' });
+
+      await service.remove(owner.id, wishlistId, created!.id);
+      expect(await service.findAll(owner.id, wishlistId)).toEqual([]);
     });
   });
 });

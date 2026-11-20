@@ -1,5 +1,6 @@
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import {
+  IsBoolean,
   IsISO4217CurrencyCode,
   IsNotEmpty,
   IsString,
@@ -29,4 +30,9 @@ export class UpdateWishlistDto extends PartialType(
   @Transform(toUpperCase)
   @IsISO4217CurrencyCode(WISHLIST_MESSAGES.currency)
   currency?: string;
+
+  /** Marks the list as past (or reopens it); see wishlist-status.ts. */
+  @ValidateIf((_, value) => value !== undefined)
+  @IsBoolean({ message: 'closed must be true or false' })
+  closed?: boolean;
 }

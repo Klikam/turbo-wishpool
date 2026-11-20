@@ -18,6 +18,8 @@ interface WishlistCardProps {
   giftsCount: number;
   /** Omit when unknown, e.g. owners can't see reservations on their lists. */
   claimedCount?: number;
+  /** The list has ended: it is muted and marked "Past". */
+  isPast?: boolean;
   onOpen: () => void;
   onDelete: () => void;
 }
@@ -28,12 +30,15 @@ export function WishlistCard({
   date,
   giftsCount,
   claimedCount,
+  isPast = false,
   onOpen,
   onDelete,
 }: WishlistCardProps) {
   return (
     <div
-      className="bg-card rounded-2xl border border-border p-5 flex flex-col gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
+      className={`bg-card rounded-2xl border border-border p-5 flex flex-col gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group ${
+        isPast ? "opacity-70" : ""
+      }`}
       onClick={onOpen}
     >
       <div className="flex items-start justify-between">
@@ -53,7 +58,14 @@ export function WishlistCard({
         </button>
       </div>
       <div>
-        <p className="text-xs text-muted-foreground mb-0.5">{occasion}</p>
+        <p className="flex items-center gap-2 text-xs text-muted-foreground mb-0.5">
+          {occasion}
+          {isPast && (
+            <span className="px-2 py-0.5 rounded-full bg-secondary font-medium">
+              Past
+            </span>
+          )}
+        </p>
         <h2 className="font-heading font-semibold text-foreground leading-tight">
           {title}
         </h2>

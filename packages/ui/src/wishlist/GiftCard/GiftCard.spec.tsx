@@ -193,6 +193,57 @@ describe("GiftCard as a visitor", () => {
   });
 });
 
+describe("GiftCard on a past list (locked)", () => {
+  it("offers a visitor nothing to claim", () => {
+    setup({ locked: true });
+
+    expect(
+      screen.getByRole("heading", { name: "Headphones" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("still shows who claimed it, without undo, ask or answer buttons", () => {
+    setup({
+      locked: true,
+      claimed: true,
+      isMine: true,
+      reservers: [
+        { name: "Me", isMe: true },
+        { name: "Ann", isMe: false },
+      ],
+      incomingRequests: [{ id: "r1", type: "share", requesterName: "Cid" }],
+    });
+
+    expect(screen.getByText("You're gifting this with Ann")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByText(/asks to share/)).not.toBeInTheDocument();
+  });
+
+  it("hides the ask buttons on a gift somebody else claimed", () => {
+    setup({
+      locked: true,
+      claimed: true,
+      reservers: [{ name: "Bob", isMe: false }],
+      onRequest: vi.fn(),
+    });
+
+    expect(screen.getByText("Claimed by Bob")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("leaves the owner's edit and delete in place", () => {
+    setup({ locked: true, isOwner: true });
+
+    expect(
+      screen.getByRole("button", { name: "Edit Headphones" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Delete Headphones" }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("GiftCard as the owner", () => {
   it("can edit and delete, but never sees who claimed it", async () => {
     const { user, onEdit, onDelete } = setup({ isOwner: true, claimed: true });

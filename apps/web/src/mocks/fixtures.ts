@@ -53,6 +53,8 @@ export const mockWishlist = (overrides: Partial<Wishlist> = {}): Wishlist => ({
   date: '2026-11-14',
   note: 'Thanks for celebrating with me! Anything on this list would make me so happy.',
   currency: 'EUR',
+  isPast: false,
+  closed: false,
   gifts: mockGifts,
   ...overrides,
 });
@@ -66,6 +68,7 @@ export const mockWishlistSummary = (
   date: '2026-11-14',
   note: null,
   giftsCount: 3,
+  isPast: false,
   ...overrides,
 });
 

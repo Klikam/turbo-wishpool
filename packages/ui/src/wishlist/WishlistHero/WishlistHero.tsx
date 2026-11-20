@@ -9,6 +9,8 @@ interface WishlistHeroProps {
   /** Omit when unknown, e.g. owners can't see reservations on their lists. */
   claimedCount?: number;
   isOwner: boolean;
+  /** The list has ended: shown as a "Past" badge next to the occasion. */
+  isPast?: boolean;
 }
 
 export function WishlistHero({
@@ -19,13 +21,19 @@ export function WishlistHero({
   giftsCount,
   claimedCount,
   isOwner,
+  isPast = false,
 }: WishlistHeroProps) {
   return (
     <div className="mb-8">
       <div className="flex items-start gap-4 flex-wrap">
         <div className="flex-1">
-          <p className="text-xs font-semibold tracking-widest text-[#C4797A] uppercase mb-1">
+          <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-[#C4797A] uppercase mb-1">
             {occasion}
+            {isPast && (
+              <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground tracking-normal normal-case">
+                Past
+              </span>
+            )}
           </p>
           <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-foreground mb-2">
             {title}

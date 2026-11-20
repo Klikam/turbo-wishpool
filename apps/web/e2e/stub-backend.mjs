@@ -41,9 +41,11 @@ function reset() {
         userId: users.olga.id,
         title: "Olga turns 30",
         occasion: "birthday",
-        date: "2026-11-14",
+        // Far ahead, so the list stays open however long this file lives.
+        date: "2099-11-14",
         note: "Surprise me",
         currency: "EUR",
+        closed: false,
       },
     ],
     requests: [],
@@ -72,6 +74,13 @@ function reset() {
   };
 }
 reset();
+
+// Like the backend: past once closed by the owner or the date has passed.
+const isPast = (list) =>
+  list.closed ||
+  (list.date !== null && list.date < new Date().toISOString().slice(0, 10));
+const PAST_MESSAGE =
+  "This wishlist is in the past, so gifts can no longer be changed";
 
 const json = (res, status, body, headers = {}) => {
   res.writeHead(status, { "Content-Type": "application/json", ...headers });
@@ -249,8 +258,11 @@ createServer(async (req, res) => {
         .filter((w) => w.userId === viewer.id)
         .map((w) => ({
           ...w,
+          isPast: isPast(w),
           giftsCount: state.gifts.filter((g) => g.wishlistId === w.id).length,
-        })),
+        }))
+        // Past lists last, like the backend.
+        .sort((a, b) => Number(a.isPast) - Number(b.isPast)),
     );
   }
 
@@ -267,6 +279,8 @@ createServer(async (req, res) => {
       date: list.date,
       note: list.note,
       currency: list.currency,
+      closed: list.closed,
+      isPast: isPast(list),
       ownerName: owner.name,
       isOwner,
       gifts: state.gifts
@@ -283,6 +297,8 @@ createServer(async (req, res) => {
       (g) => g.id === reservation[2] && g.wishlistId === reservation[1],
     );
     if (!gift) return json(res, 404, { message: "Gift not found" });
+    if (isPast(state.wishlists.find((w) => w.id === reservation[1])))
+      return json(res, 403, { message: PAST_MESSAGE });
     if (req.method === "PUT") {
       if (gift.reservers.length > 0)
         return json(res, 409, { message: "Gift is already reserved" });
@@ -316,6 +332,7 @@ createServer(async (req, res) => {
       date: body.date ?? null,
       note: body.note ?? null,
       currency: body.currency ?? "EUR",
+      closed: false,
     };
     state.wishlists.push(list);
     return json(res, 201, list);
@@ -382,6 +399,7 @@ createServer(async (req, res) => {
     );
     if (!gift) return json(res, 404, { message: "Gift not found" });
     const request = state.requests.find((r) => r.id === requestsRoute[3]);
+    if (isPast(list)) return json(res, 403, { message: PAST_MESSAGE });
 
     if (req.method === "POST") {
       const { type } = await readBody(req);

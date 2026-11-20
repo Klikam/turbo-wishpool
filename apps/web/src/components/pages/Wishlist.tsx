@@ -8,6 +8,7 @@ import {
   requestGift,
   reserveGift,
   respondToGiftRequest,
+  setWishlistClosed,
   updateGift,
 } from "@/actions/wishlists";
 import { ConfirmDeleteDialog } from "@/components/sections/ConfirmDeleteDialog";
@@ -29,7 +30,7 @@ import {
   ShareLinkButton,
   WishlistHero,
 } from "@repo/ui";
-import { Pencil, Plus, ShoppingBag } from "lucide-react";
+import { CalendarCheck, Pencil, Plus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
@@ -147,6 +148,17 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
     });
   }
 
+  function handleSetClosed(closed: boolean) {
+    mutate(() => setWishlistClosed(wishlistId, closed), {
+      onSuccess: () =>
+        toast.success(
+          closed
+            ? "Marked as past. Visitors can no longer claim gifts."
+            : "Reopened. Visitors can claim gifts again.",
+        ),
+    });
+  }
+
   function handleDelete(giftId: string) {
     mutate(() => deleteGift(wishlistId, giftId), { giftId, removes: true });
   }
@@ -215,6 +227,20 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
                 <span className="hidden sm:inline">Edit list</span>
               </Link>
             )}
+            {isOwner && !wishlist.isPast && (
+              <button
+                onClick={() => {
+                  handleSetClosed(true);
+                }}
+                disabled={isPending}
+                aria-label="Mark as past"
+                title="Mark as past: visitors can no longer claim gifts"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <CalendarCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Mark as past</span>
+              </button>
+            )}
             {isOwner && (
               <button
                 onClick={() => {
@@ -239,7 +265,42 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
           giftsCount={gifts.length}
           claimedCount={claimedCount}
           isOwner={isOwner}
+          isPast={wishlist.isPast}
         />
+
+        {wishlist.isPast && (
+          <div
+            role="status"
+            className="mb-6 flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-secondary border border-border rounded-xl text-sm text-foreground"
+          >
+            <p>
+              {!isOwner
+                ? "This wishlist is in the past, so gifts can no longer be claimed or changed."
+                : wishlist.closed
+                  ? "You marked this list as past, so visitors can no longer claim gifts."
+                  : "The date of this list has passed, so visitors can no longer claim gifts. To open it again, move the date."}
+            </p>
+            {isOwner && wishlist.closed && (
+              <button
+                onClick={() => {
+                  handleSetClosed(false);
+                }}
+                disabled={isPending}
+                className="px-3 py-1.5 rounded-lg border border-border bg-card text-sm font-medium hover:bg-background transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Reopen
+              </button>
+            )}
+            {isOwner && !wishlist.closed && (
+              <Link
+                href={`/wishlist/${wishlistId}/edit`}
+                className="px-3 py-1.5 rounded-lg border border-border bg-card text-sm font-medium hover:bg-background transition-colors"
+              >
+                Change date
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Gifts grid */}
         {gifts.length === 0 ? (
@@ -287,6 +348,7 @@ export default function Wishlist({ wishlist }: WishlistViewProps) {
                 isMine={gift.reservedByMe}
                 busy={isPending && busyGiftId === gift.id}
                 disabled={isPending}
+                locked={wishlist.isPast}
                 onClaim={() => {
                   handleClaim(gift.id);
                 }}

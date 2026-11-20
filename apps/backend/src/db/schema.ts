@@ -100,6 +100,9 @@ export const wishlistsTable = pgTable.withRLS(
     note: text(),
     // ISO 4217 code that the list's gift prices are in.
     currency: varchar({ length: 3 }).notNull().default('EUR'),
+    // Set by the owner to end the list before (or without) its date. See
+    // wishlist-status.ts: a list is also past once its date has passed.
+    closed: boolean().notNull().default(false),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index().on(table.userId)],

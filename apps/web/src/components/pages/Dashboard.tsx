@@ -100,6 +100,7 @@ export default function Dashboard({ user, wishlists: myLists }: DashboardProps) 
                 title={list.title}
                 date={list.date ?? undefined}
                 giftsCount={list.giftsCount}
+                isPast={list.isPast}
                 onOpen={() => {
                   router.push(`/wishlist/${list.id}`);
                 }}

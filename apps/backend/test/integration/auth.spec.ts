@@ -400,9 +400,7 @@ describe('better-auth configuration (real Postgres)', () => {
         email: 'anna@example.com',
         emailVerified: true,
       });
-      await expect(
-        signIn('anna@example.com'),
-      ).resolves.toBeDefined();
+      await expect(signIn('anna@example.com')).resolves.toBeDefined();
       await expect(signIn('ann@example.com')).rejects.toMatchObject({
         statusCode: 401,
       });

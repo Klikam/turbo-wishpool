@@ -33,14 +33,17 @@ export async function getMyWishlists(): Promise<WishlistSummary[]> {
 
   const wishlists = await api<WishlistSummary[]>("wishlists", accessToken);
 
-  return wishlists.map(({ id, title, occasion, date, note, giftsCount }) => ({
-    id,
-    title,
-    occasion,
-    date,
-    note,
-    giftsCount,
-  }));
+  return wishlists.map(
+    ({ id, title, occasion, date, note, giftsCount, isPast }) => ({
+      id,
+      title,
+      occasion,
+      date,
+      note,
+      giftsCount,
+      isPast,
+    }),
+  );
 }
 
 export async function createWishlist(input: NewWishlistInput) {
@@ -71,6 +74,21 @@ export async function updateWishlist(
     api<{ id: string }>(`wishlists/${wishlistId}`, accessToken, {
       method: "PATCH",
       body: input,
+    }),
+  );
+}
+
+/**
+ * Marks the list as past (or reopens it). A list whose date has passed stays
+ * past until its date is moved, whatever is set here.
+ */
+export async function setWishlistClosed(wishlistId: string, closed: boolean) {
+  const { accessToken } = await verifySession();
+
+  return toResult(() =>
+    api<{ id: string }>(`wishlists/${wishlistId}`, accessToken, {
+      method: "PATCH",
+      body: { closed },
     }),
   );
 }

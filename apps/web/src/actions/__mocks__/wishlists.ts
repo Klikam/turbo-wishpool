@@ -22,6 +22,10 @@ export const updateWishlist = fn<typeof actual.updateWishlist>(() =>
   Promise.resolve({ ok: true, data: { id: "wishlists-1" } }),
 ).mockName("updateWishlist");
 
+export const setWishlistClosed = fn<typeof actual.setWishlistClosed>(() =>
+  Promise.resolve({ ok: true, data: { id: "wishlists-1" } }),
+).mockName("setWishlistClosed");
+
 export const deleteWishlist = fn<typeof actual.deleteWishlist>(ok).mockName(
   "deleteWishlist",
 );

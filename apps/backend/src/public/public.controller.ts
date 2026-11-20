@@ -84,10 +84,11 @@ export class PublicController {
   @Delete('gifts/:id/requests/:requestId')
   async cancelRequest(
     @CurrentUserId() userId: number,
+    @Param('wishlistId', ParseUUIDPipe) wishlistId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Param('requestId', ParseUUIDPipe) requestId: string,
   ) {
-    await this.publicService.cancelRequest(id, requestId, userId);
+    await this.publicService.cancelRequest(wishlistId, id, requestId, userId);
   }
 
   @UseGuards(ThrottlerGuard)
