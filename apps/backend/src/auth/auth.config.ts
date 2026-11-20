@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth';
 import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { compare, hash } from 'bcrypt';
+import { and, eq } from 'drizzle-orm';
 import type { Database } from '../drizzle/drizzle.provider';
 import {
   accountsTable,
@@ -17,6 +18,7 @@ export interface AuthConfig {
   webUrl: string;
   secret: string;
   sendVerificationEmail: (email: { to: string; url: string }) => void;
+  sendResetPasswordEmail: (email: { to: string; url: string }) => void;
   /** Only providers with credentials configured are offered. */
   socialProviders: {
     google?: OAuthCredentials;
@@ -54,6 +56,37 @@ export function createAuth(db: Database, config: AuthConfig) {
       autoSignIn: false,
       minPasswordLength: 8,
       maxPasswordLength: 64,
+      resetPasswordTokenExpiresIn: 60 * 60,
+      // Whoever knew the old password (or had a session) is signed out.
+      revokeSessionsOnPasswordReset: true,
+      // Only accounts that already have a password get a link. Social-only
+      // accounts don't: Facebook doesn't verify emails, so someone could
+      // have pre-created an account with another person's address, and a
+      // reset would hand that person a password to an account the creator
+      // can still sign in to. Not awaited, for the same reason as the
+      // verification email: the lookup and SMTP would reveal whether the
+      // address is registered.
+      sendResetPassword: ({ user, url }) => {
+        void db
+          .select({ id: accountsTable.id })
+          .from(accountsTable)
+          .where(
+            and(
+              eq(accountsTable.userId, Number(user.id)),
+              eq(accountsTable.providerId, 'credential'),
+            ),
+          )
+          .limit(1)
+          .then(([credential]) => {
+            if (credential) {
+              config.sendResetPasswordEmail({ to: user.email, url });
+            }
+          })
+          .catch((error: unknown) => {
+            console.error('Password reset lookup failed', error);
+          });
+        return Promise.resolve();
+      },
       // Keeps existing bcrypt hashes valid after the move to better-auth.
       password: {
         hash: (password) => hash(password, BCRYPT_ROUNDS),

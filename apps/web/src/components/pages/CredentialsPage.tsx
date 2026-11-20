@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { type Resolver, type SubmitHandler, useForm } from "react-hook-form";
@@ -119,6 +120,15 @@ export default function CredentialsPage({
           type="password"
           register={register}
         />
+
+        {mode === "signin" && (
+          <Link
+            href="/forgot-password"
+            className="self-end text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Forgot password?
+          </Link>
+        )}
 
         {errors.email?.message && <ToastError message={errors.email.message} />}
 

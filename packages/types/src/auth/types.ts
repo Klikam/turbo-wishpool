@@ -7,7 +7,7 @@ const minLengthErrorMessage = `Password must contain at least ${passMin.toString
 const maxLengthErrorMessage = `Password must contain no more than ${passMax.toString()} characters`;
 const maxBytesErrorMessage = "Password is too long, use fewer special characters";
 
-const passwordSchema = z
+export const passwordSchema = z
   .string()
   .min(passMin, minLengthErrorMessage)
   .max(passMax, maxLengthErrorMessage)

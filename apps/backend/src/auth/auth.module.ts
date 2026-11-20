@@ -23,6 +23,12 @@ import { createAuth, type OAuthCredentials } from './auth.config';
               subject: 'Verify your email for Wishpool',
               text: `Welcome to Wishpool! Confirm your email address by opening this link:\n\n${url}\n\nIf you didn't create an account, you can ignore this email.`,
             }),
+          sendResetPasswordEmail: ({ to, url }) =>
+            mail.sendInBackground({
+              to,
+              subject: 'Reset your Wishpool password',
+              text: `Someone asked to reset the password for your Wishpool account. Choose a new one by opening this link (valid for one hour):\n\n${url}\n\nIf it wasn't you, ignore this email; your password stays as it is.`,
+            }),
           webUrl: config.getOrThrow<string>('WEB_URL'),
           secret: config.getOrThrow<string>('BETTER_AUTH_SECRET'),
           socialProviders: {

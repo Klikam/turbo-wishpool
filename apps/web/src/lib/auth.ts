@@ -62,7 +62,86 @@ export async function login(
   return { ok: false, error: "Invalid credentials" };
 }
 
-export type SocialProvider = "google" | "facebook";
+/** Where the reset email's link sends people to choose a new password. */
+export const RESET_PASSWORD_PATH = "/reset-password";
+
+/**
+ * Emails a reset link. Succeeds for unknown addresses too (better-auth
+ * answers generically), so the form can't be used to find out who has an
+ * account.
+ */
+export async function requestPasswordReset(email: string): Promise<AuthResult> {
+  const { error } = await authClient.requestPasswordReset({
+    email,
+    redirectTo: RESET_PASSWORD_PATH,
+  });
+
+  if (!error) return { ok: true };
+
+  if (error.status === TOO_MANY_REQUESTS) {
+    return { ok: false, error: "Too many attempts, try again in a minute" };
+  }
+
+  return {
+    ok: false,
+    error: "We couldn't send the email. Please try again.",
+  };
+}
+
+/** Sets a new password with the token from the reset email. */
+export async function resetPassword(
+  newPassword: string,
+  token: string,
+): Promise<AuthResult> {
+  const { error } = await authClient.resetPassword({ newPassword, token });
+
+  if (!error) return { ok: true };
+
+  if (error.code === "INVALID_TOKEN") {
+    return {
+      ok: false,
+      error: "This reset link is invalid or has expired. Request a new one.",
+    };
+  }
+
+  if (error.status === TOO_MANY_REQUESTS) {
+    return { ok: false, error: "Too many attempts, try again in a minute" };
+  }
+
+  return {
+    ok: false,
+    error: error.message ?? "Your password couldn't be changed. Please try again.",
+  };
+}
+
+/** Changes the signed-in user's password; their other sessions are signed out. */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthResult> {
+  const { error } = await authClient.changePassword({
+    currentPassword,
+    newPassword,
+    revokeOtherSessions: true,
+  });
+
+  if (!error) return { ok: true };
+
+  if (error.code === "INVALID_PASSWORD") {
+    return { ok: false, error: "Your current password isn't right." };
+  }
+
+  if (error.status === TOO_MANY_REQUESTS) {
+    return { ok: false, error: "Too many attempts, try again in a minute" };
+  }
+
+  return {
+    ok: false,
+    error: error.message ?? "Your password couldn't be changed. Please try again.",
+  };
+}
+
+export type SocialProvider ="google" | "facebook";
 
 /**
  * Sends the browser to the provider's consent screen. On success the user

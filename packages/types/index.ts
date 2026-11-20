@@ -1,5 +1,6 @@
 export {
   getCredentialsSchema,
+  passwordSchema,
   type SignInCredentials,
   type RegisterCredentials,
   type Mode,

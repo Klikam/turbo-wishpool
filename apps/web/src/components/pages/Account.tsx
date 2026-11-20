@@ -1,5 +1,6 @@
 "use client";
 
+import { ChangePasswordModal } from "@/components/sections/ChangePasswordModal";
 import { DeleteAccountModal } from "@/components/sections/DeleteAccountModal";
 import type { SessionUser } from "@/lib/session";
 import { BackButton } from "@repo/ui";
@@ -15,6 +16,8 @@ interface AccountProps {
 export default function Account({ user, hasPassword }: AccountProps) {
   const router = useRouter();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   return (
     <div className="flex-1 bg-background flex justify-center p-4 sm:p-8">
@@ -44,6 +47,35 @@ export default function Account({ user, hasPassword }: AccountProps) {
           </div>
         </dl>
 
+        {hasPassword && (
+          <section className="mt-8 border border-border rounded-2xl p-6">
+            <h2 className="font-heading text-xl font-semibold text-foreground mb-1">
+              Password
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Forgot it? Sign out and use &ldquo;Forgot password?&rdquo; on the
+              sign-in form.
+            </p>
+            {passwordChanged && (
+              <p
+                role="status"
+                className="text-xs text-foreground bg-secondary border border-border rounded-lg px-3 py-2 mb-4"
+              >
+                Your password has been changed.
+              </p>
+            )}
+            <button
+              onClick={() => {
+                setPasswordChanged(false);
+                setChangingPassword(true);
+              }}
+              className="px-4 py-2 rounded-xl border border-border text-foreground text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              Change password
+            </button>
+          </section>
+        )}
+
         <section className="mt-8 border border-destructive/30 rounded-2xl p-6">
           <h2 className="font-heading text-xl font-semibold text-foreground mb-1">
             Delete account
@@ -61,6 +93,18 @@ export default function Account({ user, hasPassword }: AccountProps) {
           </button>
         </section>
       </div>
+
+      {changingPassword && (
+        <ChangePasswordModal
+          onClose={() => {
+            setChangingPassword(false);
+          }}
+          onChanged={() => {
+            setChangingPassword(false);
+            setPasswordChanged(true);
+          }}
+        />
+      )}
 
       {confirmingDelete && (
         <DeleteAccountModal
