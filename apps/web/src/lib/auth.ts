@@ -157,6 +157,29 @@ export async function changeName(name: string): Promise<AuthResult> {
   };
 }
 
+/**
+ * Emails a verification link to the new address; the address only changes
+ * once it is opened. Succeeds for an address that is taken too (better-auth
+ * answers generically), so it can't be used to find out who has an account.
+ */
+export async function changeEmail(newEmail: string): Promise<AuthResult> {
+  const { error } = await authClient.changeEmail({
+    newEmail,
+    callbackURL: "/account",
+  });
+
+  if (!error) return { ok: true };
+
+  if (error.status === TOO_MANY_REQUESTS) {
+    return { ok: false, error: "Too many attempts, try again in a minute" };
+  }
+
+  return {
+    ok: false,
+    error: "We couldn't send the email. Please try again.",
+  };
+}
+
 export type SocialProvider ="google" | "facebook";
 
 /**

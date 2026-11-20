@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
 const auth = vi.hoisted(() => ({
+  changeEmail: vi.fn(),
   changeName: vi.fn(),
   changePassword: vi.fn(),
   deleteAccount: vi.fn(),
@@ -46,6 +47,41 @@ describe("Account", () => {
 
     await u.click(screen.getByRole("button", { name: "Change name" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("sends a verification link for a new email and says the address changes once it is opened", async () => {
+    auth.changeEmail.mockResolvedValue({ ok: true });
+    const u = userEvent.setup();
+    render(<Account user={user} hasPassword={false} />);
+
+    await u.click(screen.getByRole("button", { name: "Change email" }));
+    await u.type(screen.getByLabelText("New email"), "anna@example.com");
+    await u.click(
+      screen.getByRole("button", { name: "Send verification link" }),
+    );
+
+    expect(auth.changeEmail).toHaveBeenCalledWith("anna@example.com");
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "anna@example.com can be used, we've sent it a verification link",
+    );
+    expect(screen.queryByLabelText("New email")).not.toBeInTheDocument();
+    // Nothing changes until the link is opened.
+    expect(screen.getByText("ann@example.com")).toBeInTheDocument();
+
+    // The notice goes away when another change starts.
+    await u.click(screen.getByRole("button", { name: "Change name" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("can close the email dialog without sending anything", async () => {
+    const u = userEvent.setup();
+    render(<Account user={user} hasPassword />);
+
+    await u.click(screen.getByRole("button", { name: "Change email" }));
+    await u.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByLabelText("New email")).not.toBeInTheDocument();
+    expect(auth.changeEmail).not.toHaveBeenCalled();
   });
 
   it("can close the name dialog without changing anything", async () => {

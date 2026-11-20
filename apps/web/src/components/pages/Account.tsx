@@ -1,5 +1,6 @@
 "use client";
 
+import { ChangeEmailModal } from "@/components/sections/ChangeEmailModal";
 import { ChangeNameModal } from "@/components/sections/ChangeNameModal";
 import { ChangePasswordModal } from "@/components/sections/ChangePasswordModal";
 import { DeleteAccountModal } from "@/components/sections/DeleteAccountModal";
@@ -18,6 +19,9 @@ export default function Account({ user, hasPassword }: AccountProps) {
   const router = useRouter();
   const [changingName, setChangingName] = useState(false);
   const [nameChanged, setNameChanged] = useState(false);
+  const [changingEmail, setChangingEmail] = useState(false);
+  /** The address a verification link was last sent to. */
+  const [emailRequestedTo, setEmailRequestedTo] = useState<string>();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
@@ -46,6 +50,16 @@ export default function Account({ user, hasPassword }: AccountProps) {
           </p>
         )}
 
+        {emailRequestedTo && (
+          <p
+            role="status"
+            className="text-xs text-foreground bg-secondary border border-border rounded-lg px-3 py-2 mb-4"
+          >
+            If {emailRequestedTo} can be used, we&apos;ve sent it a verification
+            link. Your email changes once you open it.
+          </p>
+        )}
+
         <dl className="bg-card border border-border rounded-2xl p-6 grid gap-4 text-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -55,6 +69,7 @@ export default function Account({ user, hasPassword }: AccountProps) {
             <button
               onClick={() => {
                 setNameChanged(false);
+                setEmailRequestedTo(undefined);
                 setChangingName(true);
               }}
               className="px-3 py-1.5 rounded-xl border border-border text-foreground text-xs font-medium hover:bg-secondary transition-colors"
@@ -62,11 +77,23 @@ export default function Account({ user, hasPassword }: AccountProps) {
               Change name
             </button>
           </div>
-          <div>
-            <dt className="text-muted-foreground">Email</dt>
-            <dd className="font-medium text-foreground break-all">
-              {user.email}
-            </dd>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <dt className="text-muted-foreground">Email</dt>
+              <dd className="font-medium text-foreground break-all">
+                {user.email}
+              </dd>
+            </div>
+            <button
+              onClick={() => {
+                setNameChanged(false);
+                setEmailRequestedTo(undefined);
+                setChangingEmail(true);
+              }}
+              className="px-3 py-1.5 rounded-xl border border-border text-foreground text-xs font-medium hover:bg-secondary transition-colors"
+            >
+              Change email
+            </button>
           </div>
         </dl>
 
@@ -128,6 +155,19 @@ export default function Account({ user, hasPassword }: AccountProps) {
             setNameChanged(true);
             // The name is shown from the server-rendered session.
             router.refresh();
+          }}
+        />
+      )}
+
+      {changingEmail && (
+        <ChangeEmailModal
+          currentEmail={user.email}
+          onClose={() => {
+            setChangingEmail(false);
+          }}
+          onRequested={(newEmail) => {
+            setChangingEmail(false);
+            setEmailRequestedTo(newEmail);
           }}
         />
       )}

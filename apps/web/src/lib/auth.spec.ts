@@ -8,11 +8,13 @@ const client = vi.hoisted(() => ({
   resetPassword: vi.fn(),
   changePassword: vi.fn(),
   updateUser: vi.fn(),
+  changeEmail: vi.fn(),
   deleteUser: vi.fn(),
 }));
 vi.mock("@/lib/auth-client", () => ({ authClient: client }));
 
 import {
+  changeEmail,
   changeName,
   changePassword,
   deleteAccount,
@@ -198,6 +200,30 @@ describe("changeName", () => {
     client.updateUser.mockResolvedValue(fail(error));
 
     expect(await changeName("Ann Lee")).toEqual({
+      ok: false,
+      error: message,
+    });
+  });
+});
+
+describe("changeEmail", () => {
+  it("asks for a link to the new address that returns to the account page", async () => {
+    client.changeEmail.mockResolvedValue(ok);
+
+    expect(await changeEmail("anna@example.com")).toEqual({ ok: true });
+    expect(client.changeEmail).toHaveBeenCalledWith({
+      newEmail: "anna@example.com",
+      callbackURL: "/account",
+    });
+  });
+
+  it.each([
+    [{ status: 429 }, TOO_MANY],
+    [{ status: 500 }, "We couldn't send the email. Please try again."],
+  ])("maps %j", async (error, message) => {
+    client.changeEmail.mockResolvedValue(fail(error));
+
+    expect(await changeEmail("anna@example.com")).toEqual({
       ok: false,
       error: message,
     });

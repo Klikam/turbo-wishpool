@@ -130,6 +130,51 @@ test.describe("change name (account page)", () => {
   });
 });
 
+test.describe("change email (account page)", () => {
+  test("sends a verification link and keeps the current email until it is opened", async ({
+    page,
+    signInAs,
+  }) => {
+    await signInAs("tok-ann");
+    await page.goto("/account");
+
+    await page.getByRole("button", { name: "Change email" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("New email").fill("anna@example.com");
+    await dialog.getByRole("button", { name: "Send verification link" }).click();
+
+    await expect(page.getByRole("status")).toContainText(
+      "If anna@example.com can be used, we've sent it a verification link",
+    );
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText("ann@example.com")).toBeVisible();
+  });
+
+  test("explains an invalid address and the current one", async ({
+    page,
+    signInAs,
+  }) => {
+    await signInAs("tok-ann");
+    await page.goto("/account");
+
+    await page.getByRole("button", { name: "Change email" }).click();
+    const dialog = page.getByRole("dialog");
+    const send = dialog.getByRole("button", { name: "Send verification link" });
+
+    await dialog.getByLabel("New email").fill("nope");
+    await send.click();
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Enter a valid email address",
+    );
+
+    await dialog.getByLabel("New email").fill("ann@example.com");
+    await send.click();
+    await expect(dialog.getByRole("alert")).toContainText(
+      "already your email address",
+    );
+  });
+});
+
 test.describe("change password (account page)", () => {
   test("changes the password and confirms", async ({ page, signInAs }) => {
     await signInAs("tok-ann");

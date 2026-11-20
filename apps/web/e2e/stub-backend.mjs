@@ -206,6 +206,13 @@ createServer(async (req, res) => {
     return json(res, 200, { status: true });
   }
 
+  if (path === "/api/auth/change-email" && req.method === "POST") {
+    // Like better-auth: a link is emailed to the new address and nothing
+    // changes until it is opened; an address that is taken gets the same answer.
+    await readBody(req);
+    return json(res, 200, { status: true });
+  }
+
   if (path === "/api/auth/list-accounts") {
     return json(res, 200, viewer ? [{ providerId: "credential" }] : []);
   }
