@@ -138,6 +138,37 @@ createServer(async (req, res) => {
     );
   }
 
+  if (path === "/api/auth/request-password-reset" && req.method === "POST") {
+    // Like better-auth: the same answer whether or not the account exists.
+    return json(res, 200, { status: true });
+  }
+
+  if (path === "/api/auth/reset-password" && req.method === "POST") {
+    const { token } = await readBody(req);
+    if (token !== "valid-token") {
+      return json(res, 400, {
+        code: "INVALID_TOKEN",
+        message: "Invalid token",
+      });
+    }
+    return json(res, 200, { status: true });
+  }
+
+  if (path === "/api/auth/change-password" && req.method === "POST") {
+    const { currentPassword } = await readBody(req);
+    if (currentPassword !== PASSWORD) {
+      return json(res, 400, {
+        code: "INVALID_PASSWORD",
+        message: "Invalid password",
+      });
+    }
+    return json(res, 200, { token: null });
+  }
+
+  if (path === "/api/auth/list-accounts") {
+    return json(res, 200, viewer ? [{ providerId: "credential" }] : []);
+  }
+
   if (path === "/api/auth/get-session") {
     return json(
       res,
