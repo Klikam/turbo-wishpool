@@ -1,0 +1,12 @@
+meta {
+  name: auth
+  seq: 1
+}
+
+docs {
+  better-auth, served by the backend under /api/auth (the web app proxies the same path).
+
+  Typical flow: sign up, open the verification link that the backend prints in its console (SMTP_HOST empty), then sign in. Sign in stores the session token as `accessToken`, which the other folders send as a bearer token.
+
+  Two users are needed to try the visitor endpoints: fill in the `local` environment for the list's owner and `local-visitor` for the other person, and sign in again after switching.
+}

@@ -13,3 +13,7 @@ put {
 auth:bearer {
   token: {{accessToken}}
 }
+
+docs {
+  Fails with 403 on a past list or for the list's owner, and with 409 when the gift is already reserved.
+}

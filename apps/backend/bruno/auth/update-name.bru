@@ -1,0 +1,29 @@
+meta {
+  name: update name
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/auth/update-user
+  body: json
+  auth: bearer
+}
+
+headers {
+  Origin: {{webUrl}}
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "New Name"
+  }
+}
+
+docs {
+  2 to 100 characters; anything else is a 400 INVALID_NAME.
+}

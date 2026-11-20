@@ -1,0 +1,19 @@
+meta {
+  name: cancel request
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/requests/{{requestId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Takes back your own pending request. It stays on record, which is what the one-hour wait is measured from.
+}

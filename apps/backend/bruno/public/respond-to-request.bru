@@ -1,0 +1,25 @@
+meta {
+  name: respond to request
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/requests/{{requestId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "accept": true
+  }
+}
+
+docs {
+  Only for the people who reserved the gift. Accepting a release hands the reservation to the asker; accepting a share adds them. Accepting a share cancels other open requests to free the gift. The asker is emailed the answer.
+}

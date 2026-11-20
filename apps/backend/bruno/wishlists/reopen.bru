@@ -1,0 +1,21 @@
+meta {
+  name: reopen
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "closed": false
+  }
+}
+
+docs {
+  Clears the owner's closing only. A list whose date has passed stays past until its date is moved.
+}

@@ -1,0 +1,31 @@
+meta {
+  name: create request
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/public/wishlists/{{wishlistId}}/gifts/{{giftId}}/requests
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "type": "share"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("requestId", res.body.id);
+  }
+}
+
+docs {
+  Asks the people who reserved the gift to free it (`release`) or let you chip in (`share`); they are emailed. Only for a reserved gift, with one request per gift at a time and a one-hour wait before asking again. Not possible for your own list or on a past list.
+}

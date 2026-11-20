@@ -1,0 +1,21 @@
+meta {
+  name: mark as past
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/wishlists/{{wishlistId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "closed": true
+  }
+}
+
+docs {
+  Visitors can no longer reserve, undo, ask or answer on the list. A list is also past once its date is before today (UTC).
+}

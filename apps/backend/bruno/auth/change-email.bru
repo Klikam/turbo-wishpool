@@ -1,0 +1,30 @@
+meta {
+  name: change email
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/auth/change-email
+  body: json
+  auth: bearer
+}
+
+headers {
+  Origin: {{webUrl}}
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "newEmail": "{{newEmail}}",
+    "callbackURL": "/account"
+  }
+}
+
+docs {
+  Emails a verification link to the NEW address; the address only changes once it is opened. The current address gets a notice that a change was requested. An address that is already taken gets the same answer.
+}

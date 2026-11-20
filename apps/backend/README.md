@@ -68,6 +68,14 @@ Rules worth knowing before changing behaviour:
 
 ## Trying the API by hand
 
-`bruno/` is a [Bruno](https://www.usebruno.com) collection for the owner and
-public endpoints. Open the folder in Bruno, pick the `local` environment and
-fill in your own test account's email and password.
+`bruno/` is a [Bruno](https://www.usebruno.com) collection covering every
+endpoint: `auth`, `wishlists`, `gifts` (the owner) and `public` (visitors).
+Open the folder in Bruno, pick an environment and fill in a test account's
+email and password (they are left blank on purpose, so don't commit them).
+
+1. `auth` → **sign up**, open the verification link from the backend console,
+   then **sign in**. It stores the session token for the other folders.
+2. `wishlists` → **create**, then `gifts` → **create**. They remember
+   `wishlistId` and `giftId` for the following requests.
+3. For the visitor side, switch to the `local-visitor` environment (a second
+   account), sign in again, and use the `public` folder with the same ids.
