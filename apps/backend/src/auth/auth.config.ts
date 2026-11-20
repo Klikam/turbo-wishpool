@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { compare, hash } from 'bcrypt';
@@ -12,6 +13,12 @@ import {
 } from '../db/schema';
 
 const BCRYPT_ROUNDS = 10;
+
+// Keep in step with `nameSchema` in @repo/types, which the web forms use.
+// Without this a name longer than the database column fails with a 500.
+const NAME_MIN = 2;
+const NAME_MAX = 100;
+const NAME_ENDPOINTS = ['/sign-up/email', '/update-user'];
 
 export interface AuthConfig {
   /** Public origin of the web app. */
@@ -48,6 +55,26 @@ export function createAuth(db: Database, config: AuthConfig) {
     // Keeps ids numeric so they still match the integer user ids that
     // wishlists and gifts reference.
     advanced: { database: { generateId: 'serial' } },
+    hooks: {
+      // Rejects a name the web forms would never send, with a 400 instead of
+      // a database error. Only endpoints where the user types the name:
+      // social sign-in takes whatever the provider reports.
+      before: createAuthMiddleware((ctx) => {
+        if (!NAME_ENDPOINTS.includes(ctx.path)) return Promise.resolve();
+
+        const { name } = (ctx.body ?? {}) as { name?: unknown };
+        if (name === undefined) return Promise.resolve(); // e.g. image only
+
+        const length = typeof name === 'string' ? name.trim().length : 0;
+        if (length < NAME_MIN || length > NAME_MAX) {
+          throw new APIError('BAD_REQUEST', {
+            code: 'INVALID_NAME',
+            message: `Name must be ${NAME_MIN.toString()} to ${NAME_MAX.toString()} characters`,
+          });
+        }
+        return Promise.resolve();
+      }),
+    },
     emailAndPassword: {
       enabled: true,
       // Nobody can sign in with a password until they have proven they own

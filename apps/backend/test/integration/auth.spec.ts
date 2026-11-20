@@ -292,6 +292,77 @@ describe('better-auth configuration (real Postgres)', () => {
     });
   });
 
+  describe('user names', () => {
+    const nameOf = async () =>
+      (await ctx.db.select().from(usersTable))[0]!.name;
+
+    it('lets a signed-in user change their name, up to 100 characters', async () => {
+      await register();
+      const { token } = await signIn();
+
+      await auth.api.updateUser({
+        body: { name: 'Anna Lee' },
+        headers: bearer(token),
+      });
+      expect(await nameOf()).toBe('Anna Lee');
+
+      await auth.api.updateUser({
+        body: { name: 'a'.repeat(100) },
+        headers: bearer(token),
+      });
+      expect(await nameOf()).toBe('a'.repeat(100));
+    });
+
+    it.each([
+      ['a single character', 'A'],
+      ['only spaces', '      '],
+      ['101 characters', 'a'.repeat(101)],
+      // Longer than the database column: a 500 before the check existed.
+      ['300 characters', 'a'.repeat(300)],
+    ])('rejects %s with a 400 and keeps the old name', async (_, name) => {
+      await register();
+      const { token } = await signIn();
+
+      await expect(
+        auth.api.updateUser({ body: { name }, headers: bearer(token) }),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        body: { code: 'INVALID_NAME' },
+      });
+      expect(await nameOf()).toBe('Ann');
+    });
+
+    it('rejects a bad name at sign-up without creating the user', async () => {
+      await expect(
+        auth.api.signUpEmail({
+          body: {
+            name: 'a'.repeat(101),
+            email: 'ann@example.com',
+            password: PASSWORD,
+          },
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        body: { code: 'INVALID_NAME' },
+      });
+
+      expect(await ctx.db.select().from(usersTable)).toHaveLength(0);
+      expect(verificationMails).not.toHaveBeenCalled();
+    });
+
+    it('still lets other profile fields change without a name', async () => {
+      await register();
+      const { token } = await signIn();
+
+      await auth.api.updateUser({
+        body: { image: 'https://example.com/ann.png' },
+        headers: bearer(token),
+      });
+
+      expect(await nameOf()).toBe('Ann');
+    });
+  });
+
   describe('deleting the account', () => {
     it('needs the password and removes everything the user owns', async () => {
       await register();
