@@ -18,6 +18,10 @@ export const createWishlist = fn<typeof actual.createWishlist>(() =>
   Promise.resolve({ ok: true, data: { id: "wishlists-1" } }),
 ).mockName("createWishlist");
 
+export const updateWishlist = fn<typeof actual.updateWishlist>(() =>
+  Promise.resolve({ ok: true, data: { id: "wishlists-1" } }),
+).mockName("updateWishlist");
+
 export const deleteWishlist = fn<typeof actual.deleteWishlist>(ok).mockName(
   "deleteWishlist",
 );
@@ -26,6 +30,10 @@ export const addGift = fn<typeof actual.addGift>(() =>
   Promise.resolve({ ok: true, data: { id: "gifts-new" } }),
 ).mockName("addGift");
 
+export const updateGift = fn<typeof actual.updateGift>(() =>
+  Promise.resolve({ ok: true, data: { id: "gifts-1" } }),
+).mockName("updateGift");
+
 export const deleteGift = fn<typeof actual.deleteGift>(ok).mockName(
   "deleteGift",
 );
@@ -33,6 +41,10 @@ export const deleteGift = fn<typeof actual.deleteGift>(ok).mockName(
 export const getPublicWishlist = fn<typeof actual.getPublicWishlist>(() =>
   Promise.resolve(mockWishlist()),
 ).mockName("getPublicWishlist");
+
+export const getWishlistPreview = fn<typeof actual.getWishlistPreview>(() =>
+  Promise.resolve(null),
+).mockName("getWishlistPreview");
 
 export const reserveGift = fn<typeof actual.reserveGift>(ok).mockName(
   "reserveGift",

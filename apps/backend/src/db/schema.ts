@@ -136,7 +136,10 @@ export const giftReservationsTable = pgTable.withRLS(
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [unique().on(table.giftId, table.userId), index().on(table.userId)],
+  (table) => [
+    unique().on(table.giftId, table.userId),
+    index().on(table.userId),
+  ],
 );
 
 export const giftRequestTypeEnum = pgEnum('gift_request_type', [
