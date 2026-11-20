@@ -29,6 +29,12 @@ import { createAuth, type OAuthCredentials } from './auth.config';
               subject: 'Reset your Wishpool password',
               text: `Someone asked to reset the password for your Wishpool account. Choose a new one by opening this link (valid for one hour):\n\n${url}\n\nIf it wasn't you, ignore this email; your password stays as it is.`,
             }),
+          sendEmailChangeNotice: ({ to, newEmail }) =>
+            mail.sendInBackground({
+              to,
+              subject: 'Your Wishpool email address is being changed',
+              text: `Someone asked to change the email address of your Wishpool account to ${newEmail}. The change only happens if the link sent to that address is opened; until then nothing is different.\n\nIf it was you, there is nothing to do. If it wasn't, change your password right away (or use "Forgot password?" on the sign-in form).`,
+            }),
           webUrl: config.getOrThrow<string>('WEB_URL'),
           secret: config.getOrThrow<string>('BETTER_AUTH_SECRET'),
           socialProviders: {

@@ -1,5 +1,9 @@
 import { betterAuth } from 'better-auth';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from 'better-auth/api';
 import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { compare, hash } from 'bcrypt';
@@ -28,6 +32,12 @@ export interface AuthConfig {
   secret: string;
   sendVerificationEmail: (email: { to: string; url: string }) => void;
   sendResetPasswordEmail: (email: { to: string; url: string }) => void;
+  /**
+   * Tells the current address that a change to `newEmail` was requested. The
+   * confirmation link goes to the new address only, so this is how the
+   * rightful owner of an account learns that someone else is moving it.
+   */
+  sendEmailChangeNotice: (notice: { to: string; newEmail: string }) => void;
   /** Only providers with credentials configured are offered. */
   socialProviders: {
     google?: OAuthCredentials;
@@ -86,6 +96,20 @@ export function createAuth(db: Database, config: AuthConfig) {
           });
         }
         return Promise.resolve();
+      }),
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== '/change-email') return;
+        // A rejected request (bad address, no session) changed nothing.
+        if (ctx.context.returned instanceof Error) return;
+
+        const session = await getSessionFromCtx(ctx);
+        const { newEmail } = (ctx.body ?? {}) as { newEmail?: unknown };
+        if (!session || typeof newEmail !== 'string') return;
+
+        config.sendEmailChangeNotice({
+          to: session.user.email,
+          newEmail: newEmail.toLowerCase(),
+        });
       }),
     },
     emailAndPassword: {

@@ -26,6 +26,7 @@ describe('better-auth configuration (real Postgres)', () => {
   let auth: ReturnType<typeof createAuth>;
   const verificationMails = vi.fn();
   const resetMails = vi.fn();
+  const noticeMails = vi.fn();
 
   beforeAll(async () => {
     ctx = await createTestDb();
@@ -34,6 +35,7 @@ describe('better-auth configuration (real Postgres)', () => {
       secret: 'a-test-secret-that-is-long-enough-for-better-auth',
       sendVerificationEmail: verificationMails,
       sendResetPasswordEmail: resetMails,
+      sendEmailChangeNotice: noticeMails,
       socialProviders: {},
     });
   });
@@ -404,6 +406,42 @@ describe('better-auth configuration (real Postgres)', () => {
       await expect(signIn('ann@example.com')).rejects.toMatchObject({
         statusCode: 401,
       });
+    });
+
+    it('warns the current address that a change was requested', async () => {
+      await register();
+      const { token } = await signIn();
+
+      await auth.api.changeEmail({
+        body: { newEmail: 'Anna@Example.com' },
+        headers: bearer(token),
+      });
+
+      expect(noticeMails).toHaveBeenCalledOnce();
+      expect(noticeMails).toHaveBeenCalledWith({
+        to: 'ann@example.com',
+        newEmail: 'anna@example.com',
+      });
+    });
+
+    it('sends no warning when the request is rejected', async () => {
+      await register();
+      const { token } = await signIn();
+
+      await expect(
+        auth.api.changeEmail({
+          body: { newEmail: 'ann@example.com' },
+          headers: bearer(token),
+        }),
+      ).rejects.toMatchObject({ statusCode: 400 });
+      await expect(
+        auth.api.changeEmail({
+          body: { newEmail: 'anna@example.com' },
+          headers: new Headers(),
+        }),
+      ).rejects.toMatchObject({ statusCode: 401 });
+
+      expect(noticeMails).not.toHaveBeenCalled();
     });
 
     it('answers the same for an address that is taken, and changes nothing', async () => {
