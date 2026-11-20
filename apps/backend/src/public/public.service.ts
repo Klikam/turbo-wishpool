@@ -65,6 +65,7 @@ export class PublicService {
         title: wishlistsTable.title,
         occasion: wishlistsTable.occasion,
         date: wishlistsTable.date,
+        closed: wishlistsTable.closed,
         ownerName: usersTable.name,
       })
       .from(wishlistsTable)
@@ -73,7 +74,15 @@ export class PublicService {
 
     if (!wishlist) throw new NotFoundException('Wishlist not found');
 
-    return wishlist;
+    // Only whether it has ended is public, not how (closed or by date).
+    return {
+      id: wishlist.id,
+      title: wishlist.title,
+      occasion: wishlist.occasion,
+      date: wishlist.date,
+      ownerName: wishlist.ownerName,
+      isPast: isPastWishlist(wishlist),
+    };
   }
 
   async getWishlist(wishlistId: string, userId: number) {

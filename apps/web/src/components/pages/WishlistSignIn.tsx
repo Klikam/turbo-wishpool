@@ -20,8 +20,18 @@ export default function WishlistSignIn({ wishlist }: WishlistSignInProps) {
         <h1 className="font-heading text-3xl font-semibold text-foreground mb-2">
           {wishlist.title}
         </h1>
+        {wishlist.isPast && (
+          <p
+            role="status"
+            className="text-sm text-foreground bg-secondary border border-border rounded-lg px-3 py-2 mb-4"
+          >
+            This wishlist is in the past, so gifts can no longer be claimed.
+          </p>
+        )}
         <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-          Sign in to see {wishlist.ownerName}&apos;s wishlist and pick a gift.
+          {wishlist.isPast
+            ? `Sign in to see ${wishlist.ownerName}'s wishlist.`
+            : `Sign in to see ${wishlist.ownerName}'s wishlist and pick a gift.`}{" "}
           You&apos;ll come right back to it.
         </p>
 

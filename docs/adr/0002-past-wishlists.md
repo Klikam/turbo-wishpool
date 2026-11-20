@@ -53,5 +53,9 @@ enforced for every visitor action. The web UI is not trusted to hide buttons.
   [ADR 1](0001-deleting-a-wishlist-does-not-notify-reservers.md).
 - Past lists are not hidden or deleted automatically: they stay until their
   owner deletes them.
-- The signed-out page and link-preview text do not mention that a list is
-  past; only signed-in viewers see the banner.
+- The signed-out sign-in page says that a list is past (the preview endpoint
+  returns `isPast`, but not whether the owner closed it or its date passed),
+  so nobody signs up just to find nothing can be claimed. The link-preview
+  text (Open Graph) deliberately does not: chat apps cache previews for a long
+  time, so a list that was open when first shared would keep showing a
+  stale status.

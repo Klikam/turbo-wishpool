@@ -244,6 +244,7 @@ createServer(async (req, res) => {
       title: list.title,
       occasion: list.occasion,
       date: list.date,
+      isPast: isPast(list),
       ownerName: owner.name,
     });
   }

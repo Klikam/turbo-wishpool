@@ -68,6 +68,8 @@ describe('PublicService (real Postgres)', () => {
       expect(preview).toMatchObject({ title: 'Birthday', ownerName: 'Olga' });
       expect(preview).not.toHaveProperty('gifts');
       expect(preview).not.toHaveProperty('note');
+      expect(preview).not.toHaveProperty('closed');
+      expect(preview.isPast).toBe(false);
     });
 
     it('404s for an unknown wishlist', async () => {
@@ -608,6 +610,19 @@ describe('PublicService (real Postgres)', () => {
         service.reserve(wishlistId, giftId, ann.id),
       ).resolves.toBeUndefined();
     });
+
+    it.each(['closed', 'date'] as const)(
+      'is reported as past in the signed-out preview when it is %s',
+      async (how) => {
+        await makePast(how);
+
+        const preview = await service.getPreview(wishlistId);
+
+        expect(preview.isPast).toBe(true);
+        // Whether the owner closed it, or its date passed, is not public.
+        expect(preview).not.toHaveProperty('closed');
+      },
+    );
 
     it('still reports a missing wishlist as not found', async () => {
       await expect(

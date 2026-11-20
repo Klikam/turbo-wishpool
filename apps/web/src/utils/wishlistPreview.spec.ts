@@ -7,6 +7,7 @@ const base = {
   occasion: "birthday" as const,
   date: "2026-11-14",
   ownerName: "Emma Thornton",
+  isPast: false,
 };
 
 describe("wishlistPreview", () => {

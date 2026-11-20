@@ -206,3 +206,30 @@ test.describe("past wishlists: visitors", () => {
     await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
   });
 });
+
+test.describe("past wishlists: signed-out visitors", () => {
+  test("are told before signing in, not after", async ({ page, request }) => {
+    await patchList(request, { closed: true });
+
+    await page.goto(LIST);
+
+    await expect(
+      page.getByRole("heading", { name: "Olga turns 30" }),
+    ).toBeVisible();
+    await expect(page.getByRole("status")).toContainText(
+      "This wishlist is in the past, so gifts can no longer be claimed.",
+    );
+    await expect(page.getByText(/and pick a gift/)).toHaveCount(0);
+    // Still no gifts before signing in.
+    await expect(page.getByText("Headphones")).toHaveCount(0);
+  });
+
+  test("see nothing about it on a list that is still open", async ({
+    page,
+  }) => {
+    await page.goto(LIST);
+
+    await expect(page.getByText(/and pick a gift/)).toBeVisible();
+    await expect(page.getByRole("status")).toHaveCount(0);
+  });
+});

@@ -64,6 +64,8 @@ export interface WishlistPreview {
   occasion: Occasion | null;
   date: string | null;
   ownerName: string;
+  /** Closed by the owner, or its date has passed. */
+  isPast: boolean;
 }
 
 /**
