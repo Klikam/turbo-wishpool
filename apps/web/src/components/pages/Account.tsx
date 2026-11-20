@@ -1,5 +1,6 @@
 "use client";
 
+import { ChangeNameModal } from "@/components/sections/ChangeNameModal";
 import { ChangePasswordModal } from "@/components/sections/ChangePasswordModal";
 import { DeleteAccountModal } from "@/components/sections/DeleteAccountModal";
 import type { SessionUser } from "@/lib/session";
@@ -15,6 +16,8 @@ interface AccountProps {
 
 export default function Account({ user, hasPassword }: AccountProps) {
   const router = useRouter();
+  const [changingName, setChangingName] = useState(false);
+  const [nameChanged, setNameChanged] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
@@ -34,10 +37,30 @@ export default function Account({ user, hasPassword }: AccountProps) {
           Your account
         </h1>
 
+        {nameChanged && (
+          <p
+            role="status"
+            className="text-xs text-foreground bg-secondary border border-border rounded-lg px-3 py-2 mb-4"
+          >
+            Your name has been changed.
+          </p>
+        )}
+
         <dl className="bg-card border border-border rounded-2xl p-6 grid gap-4 text-sm">
-          <div>
-            <dt className="text-muted-foreground">Name</dt>
-            <dd className="font-medium text-foreground">{user.name}</dd>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <dt className="text-muted-foreground">Name</dt>
+              <dd className="font-medium text-foreground">{user.name}</dd>
+            </div>
+            <button
+              onClick={() => {
+                setNameChanged(false);
+                setChangingName(true);
+              }}
+              className="px-3 py-1.5 rounded-xl border border-border text-foreground text-xs font-medium hover:bg-secondary transition-colors"
+            >
+              Change name
+            </button>
           </div>
           <div>
             <dt className="text-muted-foreground">Email</dt>
@@ -93,6 +116,21 @@ export default function Account({ user, hasPassword }: AccountProps) {
           </button>
         </section>
       </div>
+
+      {changingName && (
+        <ChangeNameModal
+          currentName={user.name}
+          onClose={() => {
+            setChangingName(false);
+          }}
+          onChanged={() => {
+            setChangingName(false);
+            setNameChanged(true);
+            // The name is shown from the server-rendered session.
+            router.refresh();
+          }}
+        />
+      )}
 
       {changingPassword && (
         <ChangePasswordModal

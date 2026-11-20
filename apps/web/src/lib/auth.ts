@@ -141,6 +141,22 @@ export async function changePassword(
   };
 }
 
+/** Changes the signed-in user's display name. */
+export async function changeName(name: string): Promise<AuthResult> {
+  const { error } = await authClient.updateUser({ name });
+
+  if (!error) return { ok: true };
+
+  if (error.status === TOO_MANY_REQUESTS) {
+    return { ok: false, error: "Too many attempts, try again in a minute" };
+  }
+
+  return {
+    ok: false,
+    error: "Your name couldn't be changed. Please try again.",
+  };
+}
+
 export type SocialProvider ="google" | "facebook";
 
 /**

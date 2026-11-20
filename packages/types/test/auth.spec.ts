@@ -1,10 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { getCredentialsSchema, passwordSchema } from "../index";
+import { getCredentialsSchema, nameSchema, passwordSchema } from "../index";
 
 const messages = (result: {
   success: boolean;
   error?: { issues: { message: string }[] };
 }) => result.error?.issues.map((i) => i.message) ?? [];
+
+describe("nameSchema", () => {
+  it("trims the name", () => {
+    expect(nameSchema.parse("  Ann Lee ")).toBe("Ann Lee");
+  });
+
+  it("requires at least 2 characters once trimmed", () => {
+    expect(messages(nameSchema.safeParse(" A "))).toEqual([
+      "Name must contain at least 2 characters",
+    ]);
+  });
+
+  it("allows at most 100 characters", () => {
+    expect(nameSchema.safeParse("a".repeat(100)).success).toBe(true);
+    expect(messages(nameSchema.safeParse("a".repeat(101)))).toEqual([
+      "Name must contain no more than 100 characters",
+    ]);
+  });
+});
 
 describe("passwordSchema", () => {
   it.each(["12345678", "a".repeat(64), "pässwörd1"])(
@@ -54,6 +73,21 @@ describe("getCredentialsSchema", () => {
     expect(
       schema.safeParse({ email: "nope", password: valid.password }).success,
     ).toBe(false);
+  });
+
+  it("registration trims the name and caps it at 100 characters", () => {
+    const schema = getCredentialsSchema("register");
+
+    expect(schema.safeParse({ ...valid, name: "  Ann Lee " })).toMatchObject({
+      success: true,
+      data: { name: "Ann Lee" },
+    });
+    expect(
+      schema.safeParse({ ...valid, name: "a".repeat(100) }).success,
+    ).toBe(true);
+    expect(
+      messages(schema.safeParse({ ...valid, name: "a".repeat(101) })),
+    ).toEqual(["Name must contain no more than 100 characters"]);
   });
 
   it("registration also needs a name of at least 2 characters", () => {

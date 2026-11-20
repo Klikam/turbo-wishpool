@@ -26,9 +26,14 @@ const users = {
 };
 const PASSWORD = "secret123";
 const byToken = (token) => Object.values(users).find((u) => u.token === token);
+const seedNames = Object.fromEntries(
+  Object.entries(users).map(([key, user]) => [key, user.name]),
+);
 
 let state;
 function reset() {
+  // Name changes made through /api/auth/update-user.
+  for (const [key, name] of Object.entries(seedNames)) users[key].name = name;
   state = {
     wishlists: [
       {
@@ -187,6 +192,18 @@ createServer(async (req, res) => {
       });
     }
     return json(res, 200, { token: null });
+  }
+
+  if (path === "/api/auth/update-user" && req.method === "POST") {
+    // Called from the browser, so the session arrives as a cookie.
+    const cookieToken = /better-auth\.session_token=([^;]+)/.exec(
+      req.headers.cookie ?? "",
+    )?.[1];
+    const user = viewer ?? (cookieToken ? byToken(cookieToken) : undefined);
+    if (!user) return json(res, 401, { message: "Unauthorized" });
+    const { name } = await readBody(req);
+    if (typeof name === "string") user.name = name;
+    return json(res, 200, { status: true });
   }
 
   if (path === "/api/auth/list-accounts") {

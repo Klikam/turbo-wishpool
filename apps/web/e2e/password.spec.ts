@@ -84,6 +84,52 @@ test.describe("reset password", () => {
   });
 });
 
+test.describe("change name (account page)", () => {
+  test("changes the name and shows the new one", async ({
+    page,
+    signInAs,
+  }) => {
+    await signInAs("tok-ann");
+    await page.goto("/account");
+    await expect(page.getByText("Ann Guest")).toBeVisible();
+
+    await page.getByRole("button", { name: "Change name" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Name").fill("Anna Guest");
+    await dialog.getByRole("button", { name: "Save name" }).click();
+
+    await expect(page.getByRole("status")).toContainText(
+      "Your name has been changed.",
+    );
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText("Anna Guest")).toBeVisible();
+    await expect(page.getByText("Ann Guest")).toBeHidden();
+
+    // The rest of the app reads the name from the same session.
+    await page.goto("/dashboard");
+    await expect(page.getByRole("link", { name: "Your account" })).toContainText(
+      "Anna Guest",
+    );
+  });
+
+  test("a name that is too short is explained and nothing is sent", async ({
+    page,
+    signInAs,
+  }) => {
+    await signInAs("tok-ann");
+    await page.goto("/account");
+
+    await page.getByRole("button", { name: "Change name" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Name").fill("A");
+    await dialog.getByRole("button", { name: "Save name" }).click();
+
+    await expect(dialog.getByRole("alert")).toContainText(
+      "at least 2 characters",
+    );
+  });
+});
+
 test.describe("change password (account page)", () => {
   test("changes the password and confirms", async ({ page, signInAs }) => {
     await signInAs("tok-ann");

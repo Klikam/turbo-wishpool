@@ -17,10 +17,18 @@ export const passwordSchema = z
   );
 
 const nameMin = 2;
+const nameMax = 100;
 const nameMinLengthErrorMessage = `Name must contain at least ${nameMin.toString()} characters`;
+const nameMaxLengthErrorMessage = `Name must contain no more than ${nameMax.toString()} characters`;
+
+export const nameSchema = z
+  .string()
+  .trim()
+  .min(nameMin, nameMinLengthErrorMessage)
+  .max(nameMax, nameMaxLengthErrorMessage);
 
 const RegisterSchema = z.object({
-  name: z.string().min(nameMin, nameMinLengthErrorMessage),
+  name: nameSchema,
   email: z.email(),
   password: passwordSchema,
 });
