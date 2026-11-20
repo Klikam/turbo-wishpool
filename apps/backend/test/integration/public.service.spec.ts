@@ -355,7 +355,23 @@ describe('PublicService (real Postgres)', () => {
       ).resolves.toBeDefined();
     });
 
-    it('applies the cooldown after a decline too, and per gift', async () => {
+    it('applies the cooldown to the same person and gift only', async () => {
+      const otherGift = (await createGift(ctx.db, wishlistId, { name: 'Pen' }))
+        .id;
+      await reserveGift(ctx.db, otherGift, ann.id);
+      await service.cancelRequest(wishlistId, giftId, requestId, bob.id);
+
+      // Bob asking about another gift is not held up by the first one...
+      await expect(
+        service.createRequest(wishlistId, otherGift, bob.id, 'share'),
+      ).resolves.toBeDefined();
+      // ...and Cid asking about the same gift is not held up by Bob.
+      await expect(
+        service.createRequest(wishlistId, giftId, cid.id, 'share'),
+      ).resolves.toBeDefined();
+    });
+
+    it('applies the cooldown after a decline too', async () => {
       await service.respondToRequest(
         wishlistId,
         giftId,
@@ -450,6 +466,40 @@ describe('PublicService (real Postgres)', () => {
       // Gone from the holders' list, so there is nothing left to accept.
       const wishlist = await service.getWishlist(wishlistId, ann.id);
       expect(wishlist.gifts[0]!.incomingRequests).toEqual([]);
+    });
+
+    it('accepting a share leaves other open requests to share alone', async () => {
+      const shareId = await ask('share');
+      const otherShare = (
+        await service.createRequest(wishlistId, giftId, cid.id, 'share')
+      ).id;
+
+      await service.respondToRequest(wishlistId, giftId, shareId, ann.id, true);
+
+      const statuses = Object.fromEntries(
+        (await allRequests(ctx.db)).map((r) => [r.id, r.status]),
+      );
+      expect(statuses[otherShare]).toBe('pending');
+    });
+
+    it('declining a share does not touch open requests to free the gift', async () => {
+      const shareId = await ask('share');
+      const releaseId = (
+        await service.createRequest(wishlistId, giftId, cid.id, 'release')
+      ).id;
+
+      await service.respondToRequest(
+        wishlistId,
+        giftId,
+        shareId,
+        ann.id,
+        false,
+      );
+
+      const statuses = Object.fromEntries(
+        (await allRequests(ctx.db)).map((r) => [r.id, r.status]),
+      );
+      expect(statuses[releaseId]).toBe('pending');
     });
 
     it('declining changes nothing but the status, and tells the asker', async () => {

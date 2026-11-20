@@ -36,6 +36,8 @@ describe('WishlistService (real Postgres)', () => {
       title: 'Wedding',
       userId: owner.id,
       currency: 'EUR',
+      closed: false,
+      isPast: false,
     });
   });
 

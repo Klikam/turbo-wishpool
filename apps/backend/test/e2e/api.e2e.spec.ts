@@ -386,4 +386,193 @@ describe('HTTP API (controllers + services + real Postgres)', () => {
       expect(statuses.slice(20)).toEqual([429, 429]);
     });
   });
+
+  describe('past wishlists', () => {
+    const yesterday = () =>
+      new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+    async function setup() {
+      const { id } = await createWishlist();
+      const gift = await createGift(id);
+      const base = `/public/wishlists/${id}/gifts/${gift.id}`;
+      const asker = (await createUser(ctx.db, { name: 'Asa' })).id;
+      return { id, gift, base, asker };
+    }
+
+    it('lets the owner mark a list as past and reopen it', async () => {
+      const { id } = await createWishlist();
+
+      const closed = await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: true })
+        .expect(200);
+      expect(closed.body).toMatchObject({ closed: true, isPast: true });
+
+      const reopened = await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: false })
+        .expect(200);
+      expect(reopened.body).toMatchObject({ closed: false, isPast: false });
+    });
+
+    it('rejects a closed value that is not a boolean, and closing on create', async () => {
+      const { id } = await createWishlist();
+
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: 'yes' })
+        .expect(400);
+      await api()
+        .post('/wishlists')
+        .set(as(owner))
+        .send({ title: 'x', closed: true })
+        .expect(400);
+    });
+
+    it('does not let someone else close the list', async () => {
+      const { id } = await createWishlist();
+
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(guest))
+        .send({ closed: true })
+        .expect(404);
+    });
+
+    it.each([
+      ['closed by the owner', (id: string) => ({ id, body: { closed: true } })],
+      ['past by date', (id: string) => ({ id, body: { date: yesterday() } })],
+    ])('answers 403 to every visitor action when it is %s', async (_, how) => {
+      const { id, base, asker, gift } = await setup();
+      // Something already agreed before the list ended.
+      await api().put(`${base}/reservation`).set(as(guest)).expect(204);
+      const request = await api()
+        .post(`${base}/requests`)
+        .set(as(asker))
+        .send({ type: 'share' })
+        .expect(201);
+      const requestPath = `${base}/requests/${request.body.id}`;
+      const { body } = how(id);
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send(body)
+        .expect(200);
+
+      await api().put(`${base}/reservation`).set(as(asker)).expect(403);
+      await api().delete(`${base}/reservation`).set(as(guest)).expect(403);
+      await api()
+        .post(`${base}/requests`)
+        .set(as(asker))
+        .send({ type: 'share' })
+        .expect(403);
+      await api().delete(requestPath).set(as(asker)).expect(403);
+      await api()
+        .put(requestPath)
+        .set(as(guest))
+        .send({ accept: true })
+        .expect(403);
+
+      // Nothing moved: the visitors still see what they had.
+      const asGuest = await api()
+        .get(`/public/wishlists/${id}`)
+        .set(as(guest))
+        .expect(200);
+      expect(asGuest.body.isPast).toBe(true);
+      expect(asGuest.body.gifts[0]).toMatchObject({
+        id: gift.id,
+        reservedByMe: true,
+        incomingRequests: [{ id: request.body.id }],
+      });
+    });
+
+    it('tells everyone it is past, even signed-out visitors, without saying why', async () => {
+      const { id } = await createWishlist();
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: true })
+        .expect(200);
+
+      const preview = await api()
+        .get(`/public/wishlists/${id}/preview`)
+        .expect(200);
+      expect(preview.body).toMatchObject({ isPast: true });
+      expect(preview.body).not.toHaveProperty('closed');
+      expect(preview.body).not.toHaveProperty('gifts');
+
+      const list = await api().get('/wishlists').set(as(owner)).expect(200);
+      expect(list.body[0]).toMatchObject({ isPast: true, closed: true });
+    });
+
+    it('works again once the owner reopens it', async () => {
+      const { id, base } = await setup();
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: true })
+        .expect(200);
+      await api().put(`${base}/reservation`).set(as(guest)).expect(403);
+
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: false })
+        .expect(200);
+
+      await api().put(`${base}/reservation`).set(as(guest)).expect(204);
+    });
+
+    it('still lets the owner manage the gifts of a past list', async () => {
+      const { id } = await setup();
+      await api()
+        .patch(`/wishlists/${id}`)
+        .set(as(owner))
+        .send({ closed: true })
+        .expect(200);
+
+      await createGift(id, { name: 'Late addition' });
+      const gifts = await api()
+        .get(`/wishlists/${id}/gifts`)
+        .set(as(owner))
+        .expect(200);
+      expect(gifts.body).toHaveLength(2);
+    });
+  });
+
+  describe('gift requests', () => {
+    it('takes back a request over HTTP, then makes the asker wait before asking again', async () => {
+      const { id } = await createWishlist();
+      const gift = await createGift(id);
+      const asker = (await createUser(ctx.db, { name: 'Asa' })).id;
+      const base = `/public/wishlists/${id}/gifts/${gift.id}`;
+      await api().put(`${base}/reservation`).set(as(guest)).expect(204);
+      const created = await api()
+        .post(`${base}/requests`)
+        .set(as(asker))
+        .send({ type: 'share' })
+        .expect(201);
+
+      // Someone else's request can't be taken back, the asker's own can.
+      await api()
+        .delete(`${base}/requests/${created.body.id}`)
+        .set(as(guest))
+        .expect(404);
+      await api()
+        .delete(`${base}/requests/${created.body.id}`)
+        .set(as(asker))
+        .expect(204);
+
+      const again = await api()
+        .post(`${base}/requests`)
+        .set(as(asker))
+        .send({ type: 'share' })
+        .expect(409);
+      expect(again.body.message).toMatch(/recently/);
+      expect(sendInBackground).toHaveBeenCalledTimes(1);
+    });
+  });
 });

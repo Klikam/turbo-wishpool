@@ -84,4 +84,24 @@ describe('UpdateWishlistDto', () => {
       await messagesFor(UpdateWishlistDto, { currency: null }),
     ).not.toEqual([]);
   });
+
+  it('accepts closed as a boolean, to mark a list as past or reopen it', async () => {
+    expect(await messagesFor(UpdateWishlistDto, { closed: true })).toEqual([]);
+    expect(await messagesFor(UpdateWishlistDto, { closed: false })).toEqual([]);
+  });
+
+  it.each([['yes'], ['true'], [1], [null]])(
+    'rejects %j as closed',
+    async (closed) => {
+      expect(await messagesFor(UpdateWishlistDto, { closed })).toEqual([
+        'closed must be true or false',
+      ]);
+    },
+  );
+
+  it('does not let a list be created already closed', async () => {
+    expect(
+      await messagesFor(CreateWishlistDto, { title: 'x', closed: true }),
+    ).not.toEqual([]);
+  });
 });
