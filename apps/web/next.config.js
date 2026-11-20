@@ -8,6 +8,9 @@ if (!backendUrl) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The browser tests (e2e/) start their own server in a separate directory,
+  // so they can run while `pnpm dev` is up.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   reactCompiler: true,
   transpilePackages: ["@repo/ui"],
   async rewrites() {
