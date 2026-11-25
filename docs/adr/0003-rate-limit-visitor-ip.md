@@ -33,10 +33,14 @@ The setting is easy to get wrong, in two opposite ways:
 ## Consequences
 
 - The check is on the setting, not the behaviour: a hop count that does not
-  match the real topology is still not detected. After the first deploy, send
-  more than 20 reservation requests from one machine (expect a 429), repeat
-  with a forged `X-Forwarded-For` (still limited), and check that a second
-  IP is not affected.
+  match the real topology is still not detected at startup. After the first
+  deploy run `pnpm --filter backend check:rate-limit https://<site>`: it sends
+  sign-in attempts with a different forged `X-Forwarded-For` each and passes
+  only if the limit still kicks in after 3. That catches both a hop count
+  that is too permissive and an edge proxy that passes the header through.
+  It cannot see the opposite mistake (all visitors in one bucket), because
+  from one machine that looks the same as a single visitor: open the site
+  from a second address afterwards and confirm it is not limited too.
 - A hosting provider that passes a client-supplied `X-Forwarded-For` through
   without appending the real address makes any hop count spoofable. Confirm
   that your edge proxy appends.

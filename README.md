@@ -106,3 +106,15 @@ Before the first deploy, set `SITE_URL` (web) and `WEB_URL` (backend) to the
 public address, set `TRUST_PROXY` to match your proxy setup, and configure a
 real SMTP provider with a verified `MAIL_FROM`. See `apps/backend/README.md`
 and `apps/web/README.md` for the details of each app.
+
+After the first deploy, check that the rate limit follows the visitor IP
+(the backend must run with `NODE_ENV=production`):
+
+```sh
+pnpm --filter backend check:rate-limit https://your-site.example
+```
+
+It fails if a forged `X-Forwarded-For` lets a visitor dodge the limit. Then
+open the site from a second address (e.g. your phone on mobile data) and
+confirm it isn't limited by that run. See
+[ADR 3](docs/adr/0003-rate-limit-visitor-ip.md).
