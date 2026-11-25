@@ -33,6 +33,33 @@ Authentication is served from the web app's origin (the web app proxies
 domain. Register the redirect URIs `{WEB_URL}/api/auth/callback/google` and
 `.../callback/facebook` with the providers.
 
+### Choosing `TRUST_PROXY`
+
+The rate limit (reservations, requests and `/api/auth/*`) identifies a visitor
+by the address Express derives from `X-Forwarded-For`. The request travels
+visitor, edge proxy (your host's load balancer or CDN), web server, backend.
+The web app forwards the header unchanged and adds nothing, so the visitor
+address is the last one the **edge proxy** wrote, and the web server is the
+one hop the backend has to trust: `TRUST_PROXY=1`.
+
+- Edge proxy **appends** the address it saw (nginx
+  `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for`): `1` works.
+- Edge proxy **overwrites** with the address it saw (nginx `$remote_addr`):
+  `1` works too, and nothing a visitor sends survives.
+- Edge proxy **passes the header through** untouched: nothing is safe, a
+  visitor chooses their own address. Change the proxy setup or its
+  configuration.
+- Another load balancer sits between the web server and the backend: one more
+  hop, `2`.
+- Backend and web server on the same host with no proxy between them: the
+  default `loopback`.
+
+Your host's documentation says which of the first three it does; do not
+assume. Then confirm with `pnpm --filter backend check:rate-limit
+https://<site>` after deploying (see [ADR 3](../../docs/adr/0003-rate-limit-visitor-ip.md)):
+if it fails, the edge proxy passes the header through or `TRUST_PROXY` is too
+permissive.
+
 ## Database
 
 The schema is `src/db/schema.ts`; migrations live in `drizzle/`.
