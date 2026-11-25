@@ -40,4 +40,12 @@ The setting is easy to get wrong, in two opposite ways:
 - A hosting provider that passes a client-supplied `X-Forwarded-For` through
   without appending the real address makes any hop count spoofable. Confirm
   that your edge proxy appends.
-- The Next rewrite for `/api/auth/*` is not covered by this throttle.
+- `/api/auth/*` (sign-in, sign-up, password reset, ...) is throttled by
+  better-auth's own limiter, which is on in production (3 per 10 s for
+  sign-in and sign-up, 3 per minute for reset and verification emails). By
+  default it reads `X-Forwarded-For` itself: it ignores `TRUST_PROXY`, and for
+  a header with more than one address it resolves no IP at all, putting every
+  such visitor in one shared bucket per route. So `stampClientIp` copies the
+  IP Express resolved into `X-Wishpool-Client-Ip` (replacing anything the
+  client sent) and better-auth is told to read only that header. Both
+  throttles now follow `TRUST_PROXY`.

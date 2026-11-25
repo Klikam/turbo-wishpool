@@ -2,6 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { stampClientIp } from './config/client-ip';
 import { trustProxy, trustProxyProblem } from './config/trust-proxy';
 
 async function bootstrap() {
@@ -26,6 +27,9 @@ async function bootstrap() {
     `Rate limit trusts proxies: ${process.env.TRUST_PROXY ?? 'loopback'}`,
   );
   app.set('trust proxy', trustProxy(process.env.TRUST_PROXY));
+  // Registered before the auth routes are mounted, so their rate limit sees
+  // the same visitor IP.
+  app.use(stampClientIp);
 
   app.useGlobalPipes(
     new ValidationPipe({

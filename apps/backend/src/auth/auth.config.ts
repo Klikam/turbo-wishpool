@@ -8,6 +8,7 @@ import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { compare, hash } from 'bcrypt';
 import { and, eq } from 'drizzle-orm';
+import { CLIENT_IP_HEADER } from '../config/client-ip';
 import type { Database } from '../drizzle/drizzle.provider';
 import {
   accountsTable,
@@ -17,6 +18,11 @@ import {
 } from '../db/schema';
 
 const BCRYPT_ROUNDS = 10;
+
+// better-auth's own rate limit (on in production) identifies visitors by this
+// header, which `stampClientIp` fills from the IP Express resolved. Reading
+// `X-Forwarded-For` itself would ignore TRUST_PROXY.
+export const AUTH_IP_OPTIONS = { ipAddressHeaders: [CLIENT_IP_HEADER] };
 
 // Keep in step with `nameSchema` in @repo/types, which the web forms use.
 // Without this a name longer than the database column fails with a 500.
@@ -66,7 +72,10 @@ export function createAuth(db: Database, config: AuthConfig) {
     }),
     // Keeps ids numeric so they still match the integer user ids that
     // wishlists and gifts reference.
-    advanced: { database: { generateId: 'serial' } },
+    advanced: {
+      database: { generateId: 'serial' },
+      ipAddress: AUTH_IP_OPTIONS,
+    },
     hooks: {
       // Rejects a name or address the web forms would never send, with a 400
       // instead of a database error. Only endpoints where the user types the
