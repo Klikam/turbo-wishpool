@@ -48,5 +48,10 @@ From the root: `pnpm check-types`, `pnpm lint`, `pnpm test` (all with
 ## Deployment checklist (remind when preparing a deploy)
 
 `SITE_URL` must be set (web) and `WEB_URL` (backend); check link previews;
-set `TRUST_PROXY` (the reservation/request throttle trusts `X-Forwarded-For`);
-wipe the dev DB; pick an SMTP provider and a verified `MAIL_FROM`.
+set `TRUST_PROXY` (the reservation/request throttle and the auth throttle
+trust `X-Forwarded-For`; see `apps/backend/README.md`, usually `1`, never
+`true`, which the backend refuses in production); run the backend with
+`NODE_ENV=production` (better-auth's limiter is off otherwise); after the
+first deploy run `pnpm --filter backend check:rate-limit https://<site>` and
+open the site from a second address to confirm it isn't limited too; wipe the
+dev DB; pick an SMTP provider and a verified `MAIL_FROM`.
