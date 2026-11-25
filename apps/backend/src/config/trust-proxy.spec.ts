@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { trustProxy } from './trust-proxy';
+import { trustProxy, trustProxyProblem } from './trust-proxy';
+
+describe('trustProxyProblem', () => {
+  it('refuses true in production, only warns elsewhere', () => {
+    expect(trustProxyProblem('true', true)?.level).toBe('error');
+    expect(trustProxyProblem('true', false)?.level).toBe('warning');
+  });
+
+  it('warns about the loopback default and false in production', () => {
+    expect(trustProxyProblem(undefined, true)?.level).toBe('warning');
+    expect(trustProxyProblem('false', true)?.level).toBe('warning');
+  });
+
+  it('is quiet in development and for explicit proxy settings', () => {
+    expect(trustProxyProblem(undefined, false)).toBeNull();
+    expect(trustProxyProblem('1', true)).toBeNull();
+    expect(trustProxyProblem('loopback, 10.0.0.0/8', true)).toBeNull();
+  });
+});
 
 describe('trustProxy', () => {
   it('trusts only loopback when unset', () => {
