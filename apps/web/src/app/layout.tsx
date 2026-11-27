@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree, Playfair_Display } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 
 import { Toaster } from "@/components/ui/sonner";
 import { getSiteUrl } from "@/lib/config";
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-background">
         {children}
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
