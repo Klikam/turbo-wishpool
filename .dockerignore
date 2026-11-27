@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.next
+**/.next-e2e
+**/storybook-static
+**/playwright-report
+**/test-results
+**/.turbo
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.idea
+.claude
