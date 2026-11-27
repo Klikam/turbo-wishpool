@@ -11,7 +11,7 @@ export interface MailMessage {
 
 /**
  * Single entry point for every email the app sends (verification now,
- * notifications later). Speaks plain SMTP, so the provider (Brevo, SES, ...)
+ * notifications later). Speaks plain SMTP, so the provider (Resend, Brevo, SES, ...)
  * is only a matter of env vars. Without `SMTP_HOST` the message is logged
  * instead of sent, which keeps local development free of provider setup.
  */
